@@ -1,0 +1,236 @@
+/* Import DM Sans - Luna's soft, calm, human-centered aesthetic */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  
+  /* Luna Log Color Palette - Camouflage Mode */
+  --soft-mauve: #C2A7B8;
+  --dusty-rose: #D6B4B8;
+  --sage-green: #9FB7A4;
+  --warm-cream: #FAF8F6;
+  --soft-lilac-grey: #EEEAF0;
+  --deep-warm-grey: #3A3A44;
+  --muted-grey: #6F6F7A;
+  --light-grey: #A1A1AF;
+  --muted-wine-red: #7A2E2E;
+  
+  /* Dark Mode - Vault Colors */
+  --vault-black: #1E1F23;
+  --vault-grey: #2A2C32;
+  --soft-white: #EAEAF0;
+  
+  /* Font System - Nunito for soft, feminine aesthetic */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Tailwind Theme Tokens */
+  --background: var(--warm-cream);
+  --foreground: var(--deep-warm-grey);
+  --card: #ffffff;
+  --card-foreground: var(--deep-warm-grey);
+  --popover: #ffffff;
+  --popover-foreground: var(--deep-warm-grey);
+  --primary: var(--soft-mauve);
+  --primary-foreground: #ffffff;
+  --secondary: var(--dusty-rose);
+  --secondary-foreground: var(--deep-warm-grey);
+  --muted: var(--soft-lilac-grey);
+  --muted-foreground: var(--muted-grey);
+  --accent: var(--soft-lilac-grey);
+  --accent-foreground: var(--deep-warm-grey);
+  --destructive: var(--muted-wine-red);
+  --destructive-foreground: #ffffff;
+  --border: rgba(194, 167, 184, 0.2);
+  --input: transparent;
+  --input-background: var(--soft-lilac-grey);
+  --switch-background: #cbced4;
+  --font-weight-medium: 600; /* Updated to SemiBold for Nunito */
+  --ring: var(--soft-mauve);
+  --chart-1: var(--soft-mauve);
+  --chart-2: var(--dusty-rose);
+  --chart-3: var(--sage-green);
+  --chart-4: var(--light-grey);
+  --chart-5: var(--muted-grey);
+  --radius: 1rem;
+  --sidebar: var(--warm-cream);
+  --sidebar-foreground: var(--deep-warm-grey);
+  --sidebar-primary: var(--soft-mauve);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--soft-lilac-grey);
+  --sidebar-accent-foreground: var(--deep-warm-grey);
+  --sidebar-border: rgba(194, 167, 184, 0.2);
+  --sidebar-ring: var(--soft-mauve);
+}
+
+.dark {
+  --background: var(--vault-black);
+  --foreground: var(--soft-white);
+  --card: var(--vault-grey);
+  --card-foreground: var(--soft-white);
+  --popover: var(--vault-grey);
+  --popover-foreground: var(--soft-white);
+  --primary: var(--soft-mauve);
+  --primary-foreground: #ffffff;
+  --secondary: var(--vault-grey);
+  --secondary-foreground: var(--soft-white);
+  --muted: var(--vault-grey);
+  --muted-foreground: var(--light-grey);
+  --accent: var(--vault-grey);
+  --accent-foreground: var(--soft-white);
+  --destructive: var(--muted-wine-red);
+  --destructive-foreground: var(--soft-white);
+  --border: rgba(194, 167, 184, 0.15);
+  --input: var(--vault-grey);
+  --ring: var(--soft-mauve);
+  --font-weight-medium: 600; /* Updated to SemiBold for Nunito */
+  --font-weight-normal: 400;
+  --chart-1: var(--soft-mauve);
+  --chart-2: var(--dusty-rose);
+  --chart-3: var(--sage-green);
+  --chart-4: var(--light-grey);
+  --chart-5: var(--muted-grey);
+  --sidebar: var(--vault-black);
+  --sidebar-foreground: var(--soft-white);
+  --sidebar-primary: var(--soft-mauve);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--vault-grey);
+  --sidebar-accent-foreground: var(--soft-white);
+  --sidebar-border: rgba(194, 167, 184, 0.15);
+  --sidebar-ring: var(--soft-mauve);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=' text-']), :not(:has([class^='text-'])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Transparent scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(194, 167, 184, 0.1);
+}

@@ -1282,6 +1282,48 @@ LUNA-main/
 
 ---
 
+## Future Roadmap
+## 🧱 Phase 1: Foundation & Core Security (Q1 - Q2 2026)**
+**Focus:** Establishing the dual-interface mechanism and forensic-grade evidence collection.
+- Dual-interface “Wellness” disguise (hidden triple-tap access)
+- AES-256 encrypted local Evidence Vault
+- Auto metadata capture (GPS, timestamp, device info)
+- AI forensic analysis + risk scoring (0–100)
+- Simulated Call voice deterrence
+
+## 🛡️ Phase 2: Digital Defense & Monetization (Q3–Q4 2026)
+**Focus:** Premium launch & identity protection
+### 💎 Luna Premium (RM19–29/month)
+- Deepfake protection (adversarial perturbation)
+- Unlimited encrypted cloud backup
+- Legal-ready PDF report generation
+- AI support eligibility matching (NGO & gov aid)
+- Enhanced AI companion (“Hazim”) with localized logic
+
+## 🏢 Phase 3: Institutional & B2B Expansion (H1 2027)
+**Focus:** Organizational partnerships
+- Institutional licensing dashboard
+- Aggregated, anonymized safety analytics
+- Zero-Knowledge Proof (ZKP) eligibility verification
+- Secure API integration with shelters & legal aid
+
+## 🌏 Phase 4: Predictive Safety & ASEAN Scaling (H2 2027)
+**Focus:** Regional expansion & proactive protection
+- Localization for SG, ID, TH
+- AI-powered Safe Route risk prediction
+- Insurance partnerships (Digital Wellness bundling)
+- National-level GBV reporting infrastructure
+
+## 💰 Sustainability Model
+
+| Tier | Pricing | Value |
+|------|---------|-------|
+| **Luna Free** | RM 0 | SOS, basic deterrence, local encryption |
+| **Luna Premium** | RM 19–29/mo | Deepfake protection, legal reports, aid matching |
+| **Institutional** | Custom | Risk dashboards & workflow management |
+
+---
+
 ## Security Features
 
 ### 1. Privacy by Design
@@ -1358,47 +1400,7 @@ const PascalCase = Component;
 ---
 
 
-## Future Roadmap
-## Phase 1: Foundation & Core Security (Q1 - Q2 2026)**
-**Focus:** Establishing the dual-interface mechanism and forensic-grade evidence collection.
-- Dual-interface “Wellness” disguise (hidden triple-tap access)
-- AES-256 encrypted local Evidence Vault
-- Auto metadata capture (GPS, timestamp, device info)
-- AI forensic analysis + risk scoring (0–100)
-- Simulated Call voice deterrence
 
-## 🛡️ Phase 2: Digital Defense & Monetization (Q3–Q4 2026)
-**Focus:** Premium launch & identity protection
-### 💎 Luna Premium (RM19–29/month)
-- Deepfake protection (adversarial perturbation)
-- Unlimited encrypted cloud backup
-- Legal-ready PDF report generation
-- AI support eligibility matching (NGO & gov aid)
-- Enhanced AI companion (“Hazim”) with localized logic
-
-## 🏢 Phase 3: Institutional & B2B Expansion (H1 2027)
-**Focus:** Organizational partnerships
-- Institutional licensing dashboard
-- Aggregated, anonymized safety analytics
-- Zero-Knowledge Proof (ZKP) eligibility verification
-- Secure API integration with shelters & legal aid
-
-## 🌏 Phase 4: Predictive Safety & ASEAN Scaling (H2 2027)
-**Focus:** Regional expansion & proactive protection
-- Localization for SG, ID, TH
-- AI-powered Safe Route risk prediction
-- Insurance partnerships (Digital Wellness bundling)
-- National-level GBV reporting infrastructure
-
-## 💰 Sustainability Model
-
-| Tier | Pricing | Value |
-|------|---------|-------|
-| **Luna Free** | RM 0 | SOS, basic deterrence, local encryption |
-| **Luna Premium** | RM 19–29/mo | Deepfake protection, legal reports, aid matching |
-| **Institutional** | Custom | Risk dashboards & workflow management |
-
----
 
 ## License
 

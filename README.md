@@ -2,6 +2,7 @@
 
 ## Table of Contents
 - [Overview](#overview)
+- [Challenge Faced](#challenge-faced-globally)
 - [Features](#features)
 - [Complete Technology Stack](#complete-technology-stack)
 - [System Architecture](#system-architecture)
@@ -15,6 +16,7 @@
 - [Database Schema](#database-schema)
 - [Security Features](#security-features)
 - [Troubleshooting](#troubleshooting)
+- [Future RoadMap](#future-roadmap)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -23,6 +25,18 @@
 ## Overview
 
 **LUNA** is a comprehensive women's safety application designed to provide protection, evidence collection, and support for women in potentially dangerous situations. The app disguises itself as a period tracking app to ensure user privacy and safety.
+
+## Challenge Faced Globally (Problem Statement)
+**The Safety & Digital Abuse Crisis Targeting Women**
+LUNA was born out of a critical need to address the escalating threats women face in both physical and digital environments. Based on global and local Malaysian data from 2025-2026:
+
+**Pervasive Physical Violence**: 1 in 3 women globally have experienced physical or sexual violence. In Malaysia, rising cases in states like Selangor and Johor highlight the urgent need for accessible intervention tools.
+
+**The Deepfake Epidemic**: 95% of non-consensual deepfake content targets women. Current platforms lack native tools to detect or "immunize" photos against AI manipulation.
+
+**Evidence Sabotage**: Victims of domestic abuse often cannot report incidents because abusers frequently erase evidence from local devices or block access to safe storage.
+
+**Safety Tech Fragmentation**: Most existing solutions are either "Reactive SOS" apps (too visible) or "Health Tracking" apps (no safety features), leaving a gap for a unified, discreet ecosystem
 
 ### Mission
 To empower women with tools for personal safety, evidence documentation, and emergency assistance while maintaining complete privacy through camouflage design.
@@ -100,7 +114,7 @@ To empower women with tools for personal safety, evidence documentation, and eme
 
 ---
 
-## Complete Technology Stack
+## Technical Architecture
 
 ### Frontend Technologies
 
@@ -914,7 +928,7 @@ The app will be available at `http://localhost:3000`
 
 ---
 
-## Deployment Guide
+## Implementation Details
 
 ### Firebase Hosting Deployment
 
@@ -1343,6 +1357,51 @@ const PascalCase = Component;
 
 ---
 
+
+## Future Roadmap
+**Phase 1: Foundation & Core Security (Q1 - Q2 2026)**
+**Focus:** Establishing the dual-interface mechanism and forensic-grade evidence collection.
+- Dual-interface “Wellness” disguise (hidden triple-tap access)
+- AES-256 encrypted local Evidence Vault
+- Auto metadata capture (GPS, timestamp, device info)
+- AI forensic analysis + risk scoring (0–100)
+- Simulated Call voice deterrence
+
+## 🛡️ Phase 2: Digital Defense & Monetization (Q3–Q4 2026)
+**Focus:** Premium launch & identity protection
+### 💎 Luna Premium (RM19–29/month)
+- Deepfake protection (adversarial perturbation)
+- Unlimited encrypted cloud backup
+- Legal-ready PDF report generation
+- AI support eligibility matching (NGO & gov aid)
+- Enhanced AI companion (“Hazim”) with localized logic
+
+## 🏢 Phase 3: Institutional & B2B Expansion (H1 2027)
+**Focus:** Organizational partnerships
+
+- Institutional licensing dashboard
+- Aggregated, anonymized safety analytics
+- Zero-Knowledge Proof (ZKP) eligibility verification
+- Secure API integration with shelters & legal aid
+
+## 🌏 Phase 4: Predictive Safety & ASEAN Scaling (H2 2027)
+**Focus:** Regional expansion & proactive protection
+
+- Localization for SG, ID, TH
+- AI-powered Safe Route risk prediction
+- Insurance partnerships (Digital Wellness bundling)
+- National-level GBV reporting infrastructure
+
+## 💰 Sustainability Model
+
+| Tier | Pricing | Value |
+|------|---------|-------|
+| **Luna Free** | RM 0 | SOS, basic deterrence, local encryption |
+| **Luna Premium** | RM 19–29/mo | Deepfake protection, legal reports, aid matching |
+| **Institutional** | Custom | Risk dashboards & workflow management |
+
+---
+
 ## License
 
 This project is developed for women's safety and privacy protection.
@@ -1390,6 +1449,7 @@ For issues, questions, or support:
 | **Open Source** | ✅ GitHub | ❌ Proprietary |
 
 ---
+
 
 **Built with ❤️ using Google Gemini AI, Azure Neural TTS, and Supabase for Women's Safety**
 

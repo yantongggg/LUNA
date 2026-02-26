@@ -1359,7 +1359,7 @@ const PascalCase = Component;
 
 
 ## Future Roadmap
-**Phase 1: Foundation & Core Security (Q1 - Q2 2026)**
+## Phase 1: Foundation & Core Security (Q1 - Q2 2026)**
 **Focus:** Establishing the dual-interface mechanism and forensic-grade evidence collection.
 - Dual-interface “Wellness” disguise (hidden triple-tap access)
 - AES-256 encrypted local Evidence Vault
@@ -1378,7 +1378,6 @@ const PascalCase = Component;
 
 ## 🏢 Phase 3: Institutional & B2B Expansion (H1 2027)
 **Focus:** Organizational partnerships
-
 - Institutional licensing dashboard
 - Aggregated, anonymized safety analytics
 - Zero-Knowledge Proof (ZKP) eligibility verification
@@ -1386,7 +1385,6 @@ const PascalCase = Component;
 
 ## 🌏 Phase 4: Predictive Safety & ASEAN Scaling (H2 2027)
 **Focus:** Regional expansion & proactive protection
-
 - Localization for SG, ID, TH
 - AI-powered Safe Route risk prediction
 - Insurance partnerships (Digital Wellness bundling)

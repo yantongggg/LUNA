@@ -4,7 +4,7 @@
 - [Overview](#overview)
 - [Challenge Faced](https://github.com/yantongggg/LUNA/blob/main/README.md#challenge-faced-globally-problem-statement)
 - [Features](#features)
-- [Complete Technology Stack](#complete-technology-stack)
+- [Technical Architecture](https://github.com/yantongggg/LUNA/blob/main/README.md#technical-architecture)
 - [System Architecture](#system-architecture)
 - [AI/ML Services Integration](#aiml-services-integration)
 - [Data Flow Diagrams](#data-flow-diagrams)

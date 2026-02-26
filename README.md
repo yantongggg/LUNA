@@ -9,7 +9,7 @@
 - [AI/ML Services Integration](#aiml-services-integration)
 - [Data Flow Diagrams](#data-flow-diagrams)
 - [Workflow & User Journey](#workflow--user-journey)
-- [Installation & Setup](#installation--setup)
+- [Implementation Details](#implementation-details)
 - [Deployment Guide](#deployment-guide)
 - [Project Structure](#project-structure)
 - [API Documentation](#api-documentation)
@@ -818,7 +818,7 @@ const VOICE_NAME = 'en-MY-WilliamNeural';
 
 ---
 
-## Installation & Setup
+## Implementation Details
 
 ### Prerequisites
 
@@ -928,7 +928,7 @@ The app will be available at `http://localhost:3000`
 
 ---
 
-## Implementation Details
+## Deployment Guide
 
 ### Firebase Hosting Deployment
 

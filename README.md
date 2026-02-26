@@ -2,7 +2,7 @@
 
 ## Table of Contents
 - [Overview](#overview)
-- [Challenge Faced](#challenge-faced-globally)
+- [Challenge Faced](https://github.com/yantongggg/LUNA/blob/main/README.md#challenge-faced-globally-problem-statement)
 - [Features](#features)
 - [Complete Technology Stack](#complete-technology-stack)
 - [System Architecture](#system-architecture)

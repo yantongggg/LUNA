@@ -984,7 +984,7 @@ supabase secrets set AZURE_TTS_API_KEY=your_azure_tts_api_key_here
 supabase secrets set AZURE_TTS_REGION=your_azure_region_here
 
 # Set AI Gateway Key (for conversation training)
-supabase secrets set OPENROUTER_API_KEY=your_ai_gateway_key_here
+supabase secrets set API_KEY=your_ai_gateway_key_here
 
 # Deploy Edge Functions
 supabase functions deploy analyze-evidence --no-verify-jwt

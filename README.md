@@ -4,6 +4,7 @@
 - [Overview](#overview)
 - [Challenge Faced](https://github.com/yantongggg/LUNA/blob/main/README.md#challenge-faced-globally-problem-statement)
 - [Features](#features)
+- [Key Differentiators](#key-differentiators)
 - [Technical Architecture](https://github.com/yantongggg/LUNA/blob/main/README.md#technical-architecture)
 - [System Architecture](#system-architecture)
 - [AI/ML Services Integration](#aiml-services-integration)
@@ -111,6 +112,21 @@ To empower women with tools for personal safety, evidence documentation, and eme
 - Settings management
 - Trusted contacts configuration
 - Emergency preferences
+
+---
+
+## Key Differentiators
+
+| Feature | LUNA | Other Apps |
+|---------|------|------------|
+| **Camouflage Interface** | ✅ Period tracker disguise | ❌ Obvious safety app |
+| **AI-Powered Evidence Analysis** | ✅ Google Gemini 1.5 Flash | ❌ Manual entry only |
+| **Deepfake Detection** | ✅ Gemini Vision | ❌ Not available |
+| **Malaysian Voice** | ✅ Azure en-MY-WilliamNeural | ❌ Generic voices |
+| **Hazim Coaching** | ✅ Localized persona | ❌ Generic AI |
+| **Legal PDF Reports** | ✅ Auto-generated | ❌ Not available |
+| **End-to-End Encryption** | ✅ AES-256 | ⚠️ Varies |
+| **Open Source** | ✅ GitHub | ❌ Proprietary |
 
 ---
 
@@ -1435,20 +1451,6 @@ For issues, questions, or support:
 
 ---
 
-## Key Differentiators
-
-| Feature | LUNA | Other Apps |
-|---------|------|------------|
-| **Camouflage Interface** | ✅ Period tracker disguise | ❌ Obvious safety app |
-| **AI-Powered Evidence Analysis** | ✅ Google Gemini 1.5 Flash | ❌ Manual entry only |
-| **Deepfake Detection** | ✅ Gemini Vision | ❌ Not available |
-| **Malaysian Voice** | ✅ Azure en-MY-WilliamNeural | ❌ Generic voices |
-| **Hazim Coaching** | ✅ Localized persona | ❌ Generic AI |
-| **Legal PDF Reports** | ✅ Auto-generated | ❌ Not available |
-| **End-to-End Encryption** | ✅ AES-256 | ⚠️ Varies |
-| **Open Source** | ✅ GitHub | ❌ Proprietary |
-
----
 
 
 **Built with ❤️ using Google Gemini AI, Azure Neural TTS, and Supabase for Women's Safety**

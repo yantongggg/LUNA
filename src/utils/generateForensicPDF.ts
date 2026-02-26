@@ -184,19 +184,62 @@ class DynamicCursor {
 
 /**
  * Convert URL to base64 encoded image
+ * Enhanced: Handles Supabase storage URLs with authentication and detailed logging
  */
 async function imageUrlToBase64(url: string): Promise<string> {
+  if (!url) {
+    console.warn('[Image] No URL provided');
+    return '';
+  }
+
+  console.log('[Image] Fetching image from URL:', url);
+
   try {
-    const response = await fetch(url);
+    // Get session for authenticated storage requests
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const headers: Record<string, string> = {};
+
+    // Add auth header if available (for private storage files)
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      console.warn(`[Image] Failed to fetch: ${response.status} ${response.statusText}`);
+      return '';
+    }
+
     const blob = await response.blob();
+
+    // Verify it's actually an image
+    if (!blob.type.startsWith('image/')) {
+      console.warn('[Image] Fetched file is not an image:', blob.type);
+      return '';
+    }
+
+    console.log('[Image] Image fetched successfully, type:', blob.type, 'size:', blob.size);
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        console.log('[Image] Converted to base64, length:', result.length);
+        resolve(result);
+      };
+      reader.onerror = (e) => {
+        console.error('[Image] FileReader error:', e);
+        reject(e);
+      };
       reader.readAsDataURL(blob);
     });
   } catch (error) {
-    console.error('Failed to convert image to base64:', error);
+    console.error('[Image] Failed to convert image to base64:', error);
     return '';
   }
 }
@@ -434,18 +477,30 @@ function addForensicAnalysis(doc: jsPDF, cursor: DynamicCursor, report: Incident
 
   cursor.addSectionHeader('SECTION A: FORENSIC ANALYSIS');
 
-  // Incident Summary
+  // Incident Summary - use proper fallback
   cursor.addText('Incident Summary:', { fontSize: FONT_SIZES.body, fontStyle: 'bold' });
-  const summary = analysis?.incident_summary || 'No summary available.';
+  const summary = analysis?.incident_summary || report.risk_level || 'No summary available.';
   cursor.addText(summary, { fontSize: FONT_SIZES.body, padding: 8 });
 
-  // Risk Assessment Table
+  // Clinical Observations (if available)
+  if (analysis?.clinical_observations && analysis.clinical_observations.length > 0) {
+    cursor.addText('Clinical Observations:', { fontSize: FONT_SIZES.body, fontStyle: 'bold' });
+    analysis.clinical_observations.forEach((obs) => {
+      cursor.addText(`• ${obs}`, { fontSize: FONT_SIZES.body, padding: 2 });
+    });
+    cursor.addSpacing(5);
+  }
+
+  // Risk Assessment Table - use report-level data as fallback
   cursor.addText('Risk Assessment:', { fontSize: FONT_SIZES.body, fontStyle: 'bold' });
 
+  const riskLevel = analysis?.risk_assessment?.level || report.risk_level || 'Medium';
+  const riskScore = analysis?.risk_assessment?.score || report.risk_score || 50;
+
   const riskData = [
-    ['Risk Level', analysis?.risk_assessment?.level || 'N/A'],
-    ['Risk Score', `${analysis?.risk_assessment?.score || 0}/100`],
-    ['Escalation Risk', analysis?.risk_assessment?.escalation_risk || 'N/A'],
+    ['Risk Level', riskLevel],
+    ['Risk Score', `${riskScore}/100`],
+    ['Escalation Risk', analysis?.risk_assessment?.escalation_risk || (riskLevel === 'High' || riskLevel === 'Critical' ? 'High' : 'Medium')],
   ];
 
   autoTable(doc, {
@@ -486,12 +541,33 @@ function addForensicAnalysis(doc: jsPDF, cursor: DynamicCursor, report: Incident
 
 /**
  * Add EXHIBIT A: EVIDENCE IMAGE with dynamic cursor
+ * Enhanced: Better error handling and logging
  */
 async function addEvidenceExhibit(doc: jsPDF, cursor: DynamicCursor, report: IncidentReport, evidenceImageBase64?: string): Promise<void> {
-  // Only add if image evidence
-  if (report.evidence_type !== 'image' || !evidenceImageBase64) {
+  // Only add if image evidence - more robust check
+  const isImageType = report.evidence_type === 'image' ||
+                      report.evidence_type === 'photo' ||
+                      report.evidence_type === 'IMG' ||
+                      (report.evidence_url && (
+                        report.evidence_url.toLowerCase().includes('.jpg') ||
+                        report.evidence_url.toLowerCase().includes('.jpeg') ||
+                        report.evidence_url.toLowerCase().includes('.png') ||
+                        report.evidence_url.toLowerCase().includes('.webp')
+                      ));
+
+  if (!isImageType) {
+    console.log('[PDF] Not an image type, skipping exhibit:', report.evidence_type);
     return;
   }
+
+  if (!evidenceImageBase64) {
+    console.warn('[PDF] No base64 image data provided');
+    return;
+  }
+
+  console.log('[PDF] Adding evidence exhibit to PDF...');
+  console.log('[PDF] Evidence URL:', report.evidence_url);
+  console.log('[PDF] Evidence type:', report.evidence_type);
 
   cursor.forcePageBreak(); // Start on new page for exhibit
   addPageHeader(doc, report, undefined, doc.internal.getNumberOfPages());
@@ -500,25 +576,31 @@ async function addEvidenceExhibit(doc: jsPDF, cursor: DynamicCursor, report: Inc
   cursor.addSectionHeader('EXHIBIT A: VISUAL EVIDENCE');
 
   const pageWidth = doc.internal.pageSize.getWidth();
-  const imgWidth = pageWidth * 0.7;
-  const imgHeight = 120;
-  const imgX = (pageWidth - imgWidth) / 2;
+  const imgWidth = pageWidth - 30; // Use full width with margins
+  const imgHeight = 140; // Taller for better visibility
+  const imgX = 15; // Left align with margin
 
   // Draw image border
   doc.setDrawColor(...COLORS.accent);
   doc.setLineWidth(2);
-  doc.roundedRect(imgX - 3, cursor.getCurrentY() - 3, imgWidth + 6, imgHeight + 6, 3, 3, 'S');
+  doc.roundedRect(imgX - 2, cursor.getCurrentY() - 2, imgWidth + 4, imgHeight + 4, 2, 2, 'S');
 
-  // Add image
+  // Add image with better error handling
   try {
-    doc.addImage(evidenceImageBase64, 'JPEG', imgX, cursor.getCurrentY(), imgWidth, imgHeight);
+    // Detect image type from base64 data URL
+    const imageType = evidenceImageBase64.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+    console.log('[PDF] Adding image to PDF, type:', imageType, 'size:', evidenceImageBase64.length);
+
+    doc.addImage(evidenceImageBase64, imageType, imgX, cursor.getCurrentY(), imgWidth, imgHeight);
+    console.log('[PDF] Image added successfully');
   } catch (e) {
+    console.error('[PDF] Failed to add image to PDF:', e);
     doc.setTextColor(...COLORS.muted);
     doc.setFont('helvetica', 'italic');
-    doc.text('[Image unable to display]', pageWidth / 2, cursor.getCurrentY() + 60, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text('[Image unable to display in PDF]', pageWidth / 2, cursor.getCurrentY() + 70, { align: 'center' });
+    doc.text('Error: ' + (e instanceof Error ? e.message : 'Unknown error'), pageWidth / 2, cursor.getCurrentY() + 80, { align: 'center' });
   }
-
-  cursor.addSpacing(imgHeight + 15);
 
   // Image metadata
   doc.setFillColor(...COLORS.light);
@@ -665,7 +747,7 @@ function addPoliceReporting(doc: jsPDF, cursor: DynamicCursor, report: IncidentR
  * MAIN GENERATION FUNCTION - Orchestrates all sections with dynamic layout
  */
 export async function generateForensicPDF(options: PDFGenerationOptions): Promise<jsPDF> {
-  const { report, logoBase64, evidenceImageBase64 } = options;
+  const { report, logoBase64, evidenceImageBase64: providedImageBase64 } = options;
 
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -674,6 +756,64 @@ export async function generateForensicPDF(options: PDFGenerationOptions): Promis
   });
 
   const margin = 15;
+
+  // Fetch evidence image FIRST (before adding any content to PDF)
+  let evidenceImageBase64 = providedImageBase64;
+
+  // Try multiple sources for the image URL
+  const imageUrl = report.evidence_url || (report as any).evidenceUrl;
+
+  console.log('[PDF] Image fetch - evidence_type:', report.evidence_type);
+  console.log('[PDF] Image fetch - evidence_url:', report.evidence_url);
+  console.log('[PDF] Image fetch - evidenceUrl (fallback):', (report as any).evidenceUrl);
+  console.log('[PDF] Image fetch - final imageUrl:', imageUrl);
+  console.log('[PDF] Image fetch - providedImageBase64 length:', providedImageBase64?.length || 0);
+
+  if (!evidenceImageBase64 && imageUrl) {
+    console.log('[PDF] Evidence URL provided, fetching image:', imageUrl);
+    try {
+      // 1. Fetch image from Supabase URL with auth
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      console.log('[PDF] Fetching with auth, session exists:', !!session);
+      const res = await fetch(imageUrl, { headers });
+      console.log('[PDF] Fetch response status:', res.status, res.statusText);
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch image: ${res.status} ${res.statusText}`);
+      }
+      const blob = await res.blob();
+      console.log('[PDF] Blob size:', blob.size, 'type:', blob.type);
+
+      // Verify it's an image
+      if (!blob.type.startsWith('image/')) {
+        throw new Error(`Fetched file is not an image: ${blob.type}`);
+      }
+
+      // 2. Convert to base64
+      evidenceImageBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      console.log('[PDF] ✓ Evidence image converted to base64, type:', blob.type, 'length:', evidenceImageBase64.length);
+    } catch (err) {
+      console.error('[PDF] ✗ Failed to embed image in PDF:', err);
+      // Continue without image - PDF will still be generated
+    }
+  } else if (evidenceImageBase64) {
+    console.log('[PDF] Using provided base64 image, length:', evidenceImageBase64.length);
+  } else {
+    console.log('[PDF] No evidence image URL or base64 provided');
+  }
+
+  console.log('[PDF] Final evidenceImageBase64 length:', evidenceImageBase64?.length || 0);
 
   // Initialize dynamic cursor
   let cursor = new DynamicCursor(doc, 55, margin);
@@ -691,8 +831,22 @@ export async function generateForensicPDF(options: PDFGenerationOptions): Promis
   addAbuseCategories(doc, cursor, report);
 
   // Page 2: Evidence Exhibit (if image)
-  if (report.evidence_type === 'image' && evidenceImageBase64) {
+  // Check for various possible values of evidence_type
+  const isImageType = report.evidence_type === 'image' ||
+                      report.evidence_type === 'photo' ||
+                      report.evidence_type === 'IMG' ||
+                      (report.evidence_url && (
+                        report.evidence_url.toLowerCase().includes('.jpg') ||
+                        report.evidence_url.toLowerCase().includes('.jpeg') ||
+                        report.evidence_url.toLowerCase().includes('.png') ||
+                        report.evidence_url.toLowerCase().includes('.webp')
+                      ));
+
+  if (isImageType && evidenceImageBase64) {
+    console.log('[PDF] Adding evidence exhibit - evidence_type:', report.evidence_type, 'hasImage:', !!evidenceImageBase64);
     await addEvidenceExhibit(doc, cursor, report, evidenceImageBase64);
+  } else {
+    console.log('[PDF] Skipping evidence exhibit - evidence_type:', report.evidence_type, 'hasImage:', !!evidenceImageBase64);
   }
 
   // Page 3: Police Reporting + Recommended Actions
@@ -715,7 +869,7 @@ export async function generateForensicPDF(options: PDFGenerationOptions): Promis
 
 /**
  * Upload PDF to Supabase Storage
- * NEW: Backend storage for legal records
+ * Enhanced: Gracefully handles bucket not found errors and continues with download
  */
 async function uploadPDFToSupabase(
   pdfBlob: Blob,
@@ -727,7 +881,7 @@ async function uploadPDFToSupabase(
     const filename = `Report_${reportId.slice(0, 8)}_${date}.pdf`;
     const path = `${userId}/reports/${filename}`;
 
-    console.log('📤 Uploading PDF to Supabase Storage:', path);
+    console.log('📤 Uploading PDF to Supabase Storage (evidence_reports bucket):', path);
 
     const { data, error } = await supabase.storage
       .from('evidence_reports')
@@ -737,6 +891,13 @@ async function uploadPDFToSupabase(
       });
 
     if (error) {
+      // Check for specific error types
+      if (error.message.includes('Bucket not found') || error.message.includes('400')) {
+        console.warn('⚠️ The "evidence_reports" bucket does not exist in Supabase Storage.');
+        console.warn('📋 To fix this: Create a bucket named "evidence_reports" in your Supabase Dashboard > Storage');
+        console.warn('📥 PDF will still be downloaded locally for the user.');
+        return null;
+      }
       console.error('❌ PDF upload failed:', error);
       return null;
     }
@@ -746,10 +907,16 @@ async function uploadPDFToSupabase(
       .from('evidence_reports')
       .getPublicUrl(path);
 
-    console.log('✅ PDF uploaded successfully:', publicUrl);
+    console.log('✅ PDF uploaded successfully to cloud:', publicUrl);
 
     return { path, url: publicUrl };
-  } catch (error) {
+  } catch (error: any) {
+    // Catch any unexpected errors and gracefully degrade
+    if (error?.message?.includes('Bucket not found') || error?.message?.includes('400')) {
+      console.warn('⚠️ Storage bucket "evidence_reports" not found. PDF will be downloaded locally only.');
+      console.warn('📋 Create the bucket in Supabase Dashboard > Storage > New Bucket > Name: evidence_reports');
+      return null;
+    }
     console.error('❌ PDF upload error:', error);
     return null;
   }
@@ -858,17 +1025,40 @@ async function copyForEReporting(report: IncidentReport): Promise<void> {
 
 /**
  * Helper function to handle complete export process with cloud storage
- * NEW: Includes Supabase upload
+ * Enhanced: Always downloads PDF even if upload fails
  */
 export async function handleExportPDF(report: IncidentReport): Promise<void> {
   try {
-    // Step 1: Convert evidence image to base64 if it's an image
+    // Step 1: ALWAYS attempt to fetch & convert evidence image to base64 when a URL exists
     let evidenceImageBase64: string | undefined;
-    if (report.evidence_type === 'image' && report.evidence_url) {
-      evidenceImageBase64 = await imageUrlToBase64(report.evidence_url);
+    const evidenceUrl = report.evidence_url;
+    const looksLikeImage = report.evidence_type === 'image' ||
+      report.evidence_type === 'photo' ||
+      (evidenceUrl && /\.(jpe?g|png|webp|gif|bmp)$/i.test(evidenceUrl));
+
+    if (evidenceUrl) {
+      console.log('📸 Fetching evidence image for PDF embedding...', { evidenceUrl, evidence_type: report.evidence_type, looksLikeImage });
+      try {
+        evidenceImageBase64 = await imageUrlToBase64(evidenceUrl);
+        if (evidenceImageBase64) {
+          console.log('✅ Evidence image converted to base64, length:', evidenceImageBase64.length);
+          // If evidence_type wasn't set to 'image' but we successfully fetched an image, patch it so downstream code treats it as image
+          if (!looksLikeImage) {
+            (report as any).evidence_type = 'image';
+            console.log('📌 Patched evidence_type to "image" since URL returned a valid image');
+          }
+        } else {
+          console.warn('⚠️ Failed to load evidence image, PDF will be generated without it');
+        }
+      } catch (imgErr) {
+        console.warn('⚠️ Image fetch error (continuing without image):', imgErr);
+      }
+    } else {
+      console.log('ℹ️ No evidence_url on report, skipping image embed');
     }
 
     // Step 2: Generate PDF with dynamic layout
+    console.log('📄 Generating forensic PDF...');
     const doc = await generateForensicPDF({
       report,
       evidenceImageBase64,
@@ -876,26 +1066,32 @@ export async function handleExportPDF(report: IncidentReport): Promise<void> {
 
     // Step 3: Convert to Blob
     const pdfBlob = doc.output('blob');
+    console.log('✅ PDF generated successfully');
 
-    // Step 4: Upload to Supabase Storage (NEW)
-    const uploadResult = await uploadPDFToSupabase(pdfBlob, report.user_id, report.id);
-
-    if (uploadResult) {
-      console.log('✅ PDF backed up to cloud:', uploadResult.url);
-    } else {
-      console.warn('⚠️ PDF upload to cloud failed, but continuing with download');
+    // Step 4: Upload to Supabase Storage (non-blocking - continues even if it fails)
+    try {
+      const uploadResult = await uploadPDFToSupabase(pdfBlob, report.user_id, report.id);
+      if (uploadResult) {
+        console.log('✅ PDF backed up to cloud:', uploadResult.url);
+      } else {
+        console.log('📥 PDF cloud backup skipped (bucket not found or upload failed)');
+      }
+    } catch (uploadError) {
+      // Don't let upload failure prevent PDF download
+      console.warn('⚠️ Cloud upload failed, but continuing with download');
     }
 
-    // Step 5: Trigger user download
+    // Step 5: Always trigger user download (even if upload failed)
     const dateStr = new Date(report.created_at).toISOString().split('T')[0];
     const filename = `LUNA_Forensic_Report_${report.id.slice(0, 8)}_${dateStr}.pdf`;
     doc.save(filename);
+    console.log('✅ PDF downloaded to user device');
 
     // Step 6: Copy for e-Reporting and show bridge
     await copyForEReporting(report);
 
   } catch (error) {
-    console.error('PDF generation failed:', error);
+    console.error('❌ PDF generation failed:', error);
     throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

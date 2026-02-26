@@ -207,11 +207,14 @@ function ReportPreviewModal({ evidence, analysisResult, onClose }: ReportPreview
   };
 
   return (
-    <div className="absolute inset-0 z-50 w-full h-full bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      {/* Paper Document Container */}
-      <div className="w-full h-[90%] bg-white text-black rounded shadow-lg overflow-hidden flex flex-col">
+    <div className="absolute inset-0 z-[100] flex items-center justify-center p-4">
+      {/* BACKDROP - ONLY this has blur and opacity */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+
+      {/* MODAL CARD - solid bg, relative z-index */}
+      <div className="relative z-10 w-full max-w-sm max-h-[85%] bg-[#1F2937] border border-gray-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shrink-0 sticky top-0 bg-white z-10">
+        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#C2A7B8] rounded-lg flex items-center justify-center shadow-sm">
               <span className="text-white text-lg font-bold">L</span>
@@ -232,7 +235,7 @@ function ReportPreviewModal({ evidence, analysisResult, onClose }: ReportPreview
         </div>
 
         {/* Content - Document Style */}
-        <div className="flex-1 overflow-y-auto px-8 py-8">
+        <div className="flex-1 overflow-y-auto px-8 py-8 bg-white">
           <div
             ref={reportRef}
             className="font-serif text-gray-900"
@@ -335,106 +338,10 @@ function ReportPreviewModal({ evidence, analysisResult, onClose }: ReportPreview
               </p>
             </div>
           </div>
-          {/* Report Header */}
-          <div className="text-center border-b-2 border-gray-900 pb-6 mb-6">
-            <h1 className="text-2xl font-bold tracking-wider mb-2">OFFICIAL EVIDENCE REPORT</h1>
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-8 h-8 bg-[#C2A7B8] rounded-lg flex items-center justify-center">
-                <span className="text-white text-sm font-bold">L</span>
-              </div>
-              <p className="text-sm font-semibold text-gray-700">Luna Women's Safety App</p>
-            </div>
-          </div>
-
-          {/* Case Information */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center bg-gray-50 px-4 py-2 rounded">
-              <span className="text-sm font-medium text-gray-600">Case ID</span>
-              <span className="text-sm font-mono text-gray-900">{caseId}</span>
-            </div>
-            <div className="flex justify-between items-center bg-gray-50 px-4 py-2 rounded mt-1">
-              <span className="text-sm font-medium text-gray-600">Generated</span>
-              <span className="text-sm text-gray-900">{new Date().toLocaleString()}</span>
-            </div>
-          </div>
-
-          {/* Evidence Details */}
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-2">
-              EVIDENCE DETAILS
-            </h2>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">File Name:</span>
-                <span className="text-gray-900 font-mono text-right">{evidence.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Date:</span>
-                <span className="text-gray-900 text-right">{evidence.date}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Size:</span>
-                <span className="text-gray-900 text-right">{evidence.size}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Type:</span>
-                <span className="text-gray-900 text-right capitalize">
-                  {evidence.icon === 'camera' ? 'Image' : evidence.icon === 'mic' ? 'Audio' : 'Document'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Encryption:</span>
-                <span className="text-green-700 font-semibold text-right">✓ AES-256 Encrypted</span>
-              </div>
-              {evidence.riskLevel && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 font-medium">Risk Level:</span>
-                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                    evidence.riskLevel === 'Low' ? 'bg-green-100 text-green-800' :
-                    evidence.riskLevel === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                    evidence.riskLevel === 'High' ? 'bg-orange-100 text-orange-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {evidence.riskLevel}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* AI Analysis */}
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-2">
-              AI ANALYSIS
-            </h2>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              {analysisResult ? (
-                <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
-                  {analysisResult}
-                </p>
-              ) : (
-                <p className="text-sm text-gray-500 italic text-center py-4">
-                  No analysis available. Please run AI Analysis first.
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-8 pt-4 border-t border-gray-300">
-            <p className="text-xs text-gray-500 text-center leading-relaxed">
-              <strong>LEGAL DISCLAIMER:</strong> This report is generated by Luna Women's Safety App's AI system
-              and is intended for informational purposes only. The analysis provided should not be considered
-              legal advice. For legal proceedings, please consult with a qualified attorney.
-            </p>
-            <p className="text-xs text-gray-400 text-center mt-2">
-              Report ID: {caseId} • Generated by Luna v2.0
-            </p>
-          </div>
         </div>
 
         {/* Download Button - Sticky Footer */}
-        <div className="bg-white border-t border-gray-200 px-8 py-5 shrink-0 sticky bottom-0 bg-white z-10">
+        <div className="bg-white border-t border-gray-200 px-8 py-5 shrink-0">
           <button
             onClick={handleDownloadPDF}
             disabled={isGenerating}
@@ -534,27 +441,34 @@ Confidence: 87%`;
   };
 
   return (
-    <div className="absolute inset-0 z-40 w-full h-full bg-gray-900 flex flex-col overflow-y-auto text-white animate-in slide-in-from-bottom duration-300">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 shrink-0">
-        <button
-          onClick={onClose}
-          className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition-colors"
-        >
-          <div className="w-5 h-5">
-            <ChevronLeftIcon />
-          </div>
-        </button>
-        <h2 className="text-lg font-semibold">Evidence Details</h2>
-        <div className="w-10 h-10 rounded-full bg-[rgba(159,183,164,0.2)] flex items-center justify-center">
-          <div className="w-5 h-5 text-[#9FB7A4]">
-            <LockIcon />
+    <>
+    {/* Master Wrapper to hold everything */}
+    <div className="absolute inset-0 z-[100] flex items-center justify-center p-4">
+      {/* BACKDROP - ONLY this has blur and opacity */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+
+      {/* MODAL CARD - solid bg, relative z-index */}
+      <div className="relative z-10 w-full max-w-sm max-h-[85%] bg-[#1F2937] border border-gray-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-800">
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition-colors"
+          >
+            <div className="w-5 h-5">
+              <ChevronLeftIcon />
+            </div>
+          </button>
+          <h2 className="text-lg font-semibold">Evidence Details</h2>
+          <div className="w-10 h-10 rounded-full bg-[rgba(159,183,164,0.2)] flex items-center justify-center">
+            <div className="w-5 h-5 text-[#9FB7A4]">
+              <LockIcon />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
         {/* File Preview */}
         <div className="flex flex-col items-center py-6">
           {getFileIcon()}
@@ -666,17 +580,19 @@ Confidence: 87%`;
             <span>📄 Preview Legal Report</span>
           </button>
         </div>
-
-        {/* Report Preview Modal */}
-        {showPreviewModal && (
-          <ReportPreviewModal
-            evidence={evidence}
-            analysisResult={analysisResult}
-            onClose={() => setShowPreviewModal(false)}
-          />
-        )}
       </div>
     </div>
+    </div>
+
+    {/* Report Preview Modal - rendered OUTSIDE the modal container div */}
+    {showPreviewModal && (
+      <ReportPreviewModal
+        evidence={evidence}
+        analysisResult={analysisResult}
+        onClose={() => setShowPreviewModal(false)}
+      />
+    )}
+  </>
   );
 }
 
@@ -1363,8 +1279,12 @@ export function EvidenceVault({ onNavigate }: EvidenceVaultProps) {
 
         {/* Upload Feedback */}
         {showUploadFeedback && (
-          <div className="fixed inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm flex items-center justify-center z-50 animate-[fadeIn_0.2s_ease-out]">
-            <div className="bg-[#2a2c32] rounded-[24px] px-8 py-6 border-[1px] border-[rgba(194,167,184,0.3)] shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+          <div className="absolute inset-0 z-[100] flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]">
+            {/* BACKDROP - ONLY this has blur and opacity */}
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+
+            {/* MODAL CARD - solid bg, relative z-index */}
+            <div className="relative z-10 bg-[#1F2937] rounded-[24px] px-8 py-6 border border-gray-700 shadow-2xl max-w-[85%]">
               <div className="flex flex-col items-center gap-4">
                 {/* Animated Upload Icon */}
                 <div className="size-[64px] bg-[rgba(194,167,184,0.15)] rounded-full flex items-center justify-center animate-[pulse_1s_ease-in-out_infinite]">
@@ -1396,169 +1316,16 @@ export function EvidenceVault({ onNavigate }: EvidenceVaultProps) {
           </div>
         )}
 
-        {/* Context Dialog for AI Analysis - iPhone Style */}
-        {showContextDialog && (
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 px-6">
-            <div className="bg-[#1e1f23] rounded-[12px] w-full max-w-[230px] shadow-2xl animate-in fade-in zoom-in duration-150 overflow-hidden">
-              {/* Header - Ultra Compact */}
-              <div className="px-4 pt-4 pb-2.5 text-center">
-                <div className="size-8 rounded-full bg-[rgba(159,183,164,0.35)] flex items-center justify-center mx-auto mb-2">
-                  <BrainIcon />
-                </div>
-                <h2 className="font-['Nunito',sans-serif] font-semibold text-[#eaeaf0] text-[15px] leading-tight mb-0.5">
-                  AI Analysis
-                </h2>
-                <p className="font-['Nunito',sans-serif] font-normal text-[#a1a1af] text-[12px]">
-                  Add context?
-                </p>
-              </div>
-
-              {/* Body - Ultra Compact */}
-              <div className="px-4 pb-3">
-                <textarea
-                  value={userContext}
-                  onChange={(e) => setUserContext(e.target.value)}
-                  placeholder="Brief description..."
-                  className="w-full h-[60px] bg-[rgba(42,44,50,0.6)] border border-[rgba(194,167,184,0.2)] rounded-lg px-2.5 py-2 text-[#eaeaf0] text-[12px] font-['Nunito',sans-serif] placeholder:text-[#6f6f7a] focus:outline-none focus:border-[rgba(194,167,184,0.3)] resize-none transition-all"
-                />
-              </div>
-
-              {/* Footer - iPhone Style Buttons */}
-              <div className="flex border-t border-[rgba(194,167,184,0.2)]">
-                <button
-                  onClick={async () => {
-                    if (!pendingFile) return;
-
-                    // Get or create user ID
-                    let userId = currentUserId;
-                    if (!userId) {
-                      const { data: { user }, error } = await supabase.auth.getUser();
-                      if (error) {
-                        console.error('Auth error:', error);
-                      }
-                      if (user) {
-                        userId = user.id;
-                        setCurrentUserId(user.id);
-                      } else {
-                        // Use stable anonymous UUID from localStorage
-                        userId = getStableAnonUserId();
-                        setCurrentUserId(userId);
-                      }
-                    }
-
-                    // Close dialog and upload without AI analysis
-                    setShowContextDialog(false);
-                    setShowUploadFeedback(true);
-
-                    try {
-                      // Upload file to Supabase Storage
-                      console.log('Skip button: Uploading file to Supabase Storage...');
-                      console.log('User ID:', userId);
-
-                      let evidenceUrl: string | null = null;
-
-                      // FORCE UPLOAD: Upload even in demo mode
-                      // Use 'demo-uploads' folder for storage if not a real UUID
-                      const uploadFolder = userId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
-                        ? userId
-                        : 'demo-uploads';
-                      console.log('📤 Uploading to folder:', uploadFolder);
-
-                      try {
-                        const { path, url } = await db.uploadEvidence(uploadFolder, pendingFile);
-                        evidenceUrl = url;
-                        console.log('✅ File uploaded successfully:', evidenceUrl);
-                      } catch (uploadError) {
-                        console.error('❌ Upload to Supabase failed:', uploadError);
-                        console.error('Error details:', JSON.stringify(uploadError, null, 2));
-
-                        alert(`Upload failed: ${uploadError.message || 'Unknown error'}\n\nPlease check:\n1. The "evidence" bucket exists in Supabase Storage\n2. RLS policies allow uploads\n3. Your credentials are correct`);
-
-                        evidenceUrl = null;
-                      }
-
-                      // Create incident report in database (without AI analysis)
-                      console.log('Creating incident report with upsert...');
-                      try {
-                        const report = await db.upsertIncidentReport({
-                          user_id: userId, // Always use stable UUID
-                          evidence_url: evidenceUrl,
-                          evidence_type: 'image',
-                          user_context: userContext || null,
-                          ai_analysis: {},
-                          risk_score: 0,
-                          risk_level: null,
-                          status: 'pending',
-                        });
-
-                        if (report) {
-                          console.log('✓ Report saved to database:', report.id);
-                          // Reload reports
-                          await loadIncidentReports();
-                        }
-                      } catch (dbError) {
-                        console.error('Database save failed:', dbError);
-                        // Don't throw - allow upload to complete even if DB fails
-                        alert(`Warning: Evidence uploaded but database save failed. Your file is safe in storage.`);
-                      }
-
-                      // Add file to local state
-                      const fileSize = (pendingFile.size / (1024 * 1024)).toFixed(1);
-                      const newFile = {
-                        id: Date.now(),
-                        icon: 'camera' as const,
-                        name: `${pendingFile.name.split('.')[0]}_${Date.now()}.enc`,
-                        date: 'Just now',
-                        size: `${fileSize} MB`,
-                        isNew: true,
-                      };
-
-                      setFiles(prev => [newFile, ...prev]);
-                      setUserContext('');
-                      setPendingFile(null);
-
-                      setTimeout(() => {
-                        setShowUploadFeedback(false);
-                        setTimeout(() => {
-                          setFiles(prev => prev.map(f => ({ ...f, isNew: false })));
-                        }, 300);
-                      }, 1000);
-                    } catch (error) {
-                      console.error('Error uploading evidence:', error);
-                      setShowUploadFeedback(false);
-                    }
-                  }}
-                  disabled={isAnalyzing}
-                  className="flex-1 py-3 font-['Nunito',sans-serif] font-semibold text-[#9fb7a4] text-[15px] hover:bg-[rgba(159,183,164,0.05)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-r border-[rgba(194,167,184,0.2)]"
-                >
-                  Skip
-                </button>
-                <button
-                  onClick={handleAnalyzeEvidence}
-                  disabled={isAnalyzing}
-                  className="flex-1 py-3 font-['Nunito',sans-serif] font-semibold text-[#9fb7a4] text-[15px] hover:bg-[rgba(159,183,164,0.05)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <svg className="animate-spin size-3.5" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span>...</span>
-                    </>
-                  ) : (
-                    'Analyze'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Context Dialog for AI Analysis - MOVED TO ROOT LEVEL (after panic button) */}
 
         {/* Report History Modal */}
         {showHistoryModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="w-full max-w-sm bg-[#1F2937] rounded-2xl border border-gray-700 shadow-2xl max-h-[70vh] overflow-hidden flex flex-col">
+          <div className="absolute inset-0 z-[100] flex items-center justify-center p-4">
+            {/* BACKDROP - ONLY this has blur and opacity */}
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowHistoryModal(false)} />
+
+            {/* MODAL CARD - solid bg, relative z-index */}
+            <div className="relative z-10 w-full max-w-sm max-h-[85%] bg-[#1F2937] rounded-2xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col">
               {/* Header */}
               <div className="shrink-0 p-4 border-b border-gray-800 flex justify-between items-center">
                 <h2 className="font-['Nunito',sans-serif] font-semibold text-[#eaeaf0] text-[16px]">
@@ -1642,7 +1409,11 @@ export function EvidenceVault({ onNavigate }: EvidenceVaultProps) {
         {selectedReport && (
           <IncidentReportView
             report={selectedReport}
-            onClose={() => setSelectedReport(null)}
+            onClose={() => {
+              setSelectedReport(null);
+              // Ensure history modal stays closed when using X button
+              setShowHistoryModal(false);
+            }}
             onBack={() => {
               setSelectedReport(null);
               setShowHistoryModal(true);
@@ -1689,6 +1460,167 @@ export function EvidenceVault({ onNavigate }: EvidenceVaultProps) {
           </div>
         )}
       </button>
+
+      {/* Context Dialog for AI Analysis - Constrained lightbulb modal */}
+      {showContextDialog && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+
+          {/* Lightbulb Card - small fixed size */}
+          <div className="relative w-[80%] max-w-[260px] bg-[#1e1f23] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            {/* Header - Lightbulb and title */}
+            <div className="px-4 pt-4 pb-2.5 text-center">
+              <div className="size-8 rounded-full bg-[rgba(159,183,164,0.35)] flex items-center justify-center mx-auto mb-2">
+                <BrainIcon />
+              </div>
+              <h2 className="font-['Nunito',sans-serif] font-semibold text-[#eaeaf0] text-[15px] leading-tight mb-0.5">
+                AI Analysis
+              </h2>
+              <p className="font-['Nunito',sans-serif] font-normal text-[#a1a1af] text-[12px]">
+                Add context?
+              </p>
+            </div>
+
+            {/* Body - Textarea */}
+            <div className="px-4 pb-3">
+              <textarea
+                value={userContext}
+                onChange={(e) => setUserContext(e.target.value)}
+                placeholder="Brief description..."
+                className="w-full h-[60px] bg-[rgba(42,44,50,0.6)] border border-[rgba(194,167,184,0.2)] rounded-lg px-2.5 py-2 text-[#eaeaf0] text-[12px] font-['Nunito',sans-serif] placeholder:text-[#6f6f7a] focus:outline-none focus:border-[rgba(194,167,184,0.3)] resize-none transition-all"
+              />
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex border-t border-[rgba(194,167,184,0.2)]">
+              <button
+                onClick={async () => {
+                  if (!pendingFile) return;
+
+                  // Get or create user ID
+                  let userId = currentUserId;
+                  if (!userId) {
+                    const { data: { user }, error } = await supabase.auth.getUser();
+                    if (error) {
+                      console.error('Auth error:', error);
+                    }
+                    if (user) {
+                      userId = user.id;
+                      setCurrentUserId(user.id);
+                    } else {
+                      // Use stable anonymous UUID from localStorage
+                      userId = getStableAnonUserId();
+                      setCurrentUserId(userId);
+                    }
+                  }
+
+                  // Close dialog and upload without AI analysis
+                  setShowContextDialog(false);
+                  setShowUploadFeedback(true);
+
+                  try {
+                    // Upload file to Supabase Storage
+                    console.log('Skip button: Uploading file to Supabase Storage...');
+                    console.log('User ID:', userId);
+
+                    let evidenceUrl: string | null = null;
+
+                    // FORCE UPLOAD: Upload even in demo mode
+                    // Use 'demo-uploads' folder for storage if not a real UUID
+                    const uploadFolder = userId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+                      ? userId
+                      : 'demo-uploads';
+                    console.log('📤 Uploading to folder:', uploadFolder);
+
+                    try {
+                      const { path, url } = await db.uploadEvidence(uploadFolder, pendingFile);
+                      evidenceUrl = url;
+                      console.log('✅ File uploaded successfully:', evidenceUrl);
+                    } catch (uploadError) {
+                      console.error('❌ Upload to Supabase failed:', uploadError);
+                      console.error('Error details:', JSON.stringify(uploadError, null, 2));
+
+                      alert(`Upload failed: ${uploadError.message || 'Unknown error'}\n\nPlease check:\n1. The "evidence" bucket exists in Supabase Storage\n2. RLS policies allow uploads\n3. Your credentials are correct`);
+
+                      evidenceUrl = null;
+                    }
+
+                    // Create incident report in database (without AI analysis)
+                    console.log('Creating incident report with upsert...');
+                    try {
+                      const report = await db.upsertIncidentReport({
+                        user_id: userId, // Always use stable UUID
+                        evidence_url: evidenceUrl,
+                        evidence_type: 'image',
+                        user_context: userContext || null,
+                        ai_analysis: {},
+                        risk_score: 0,
+                        risk_level: null,
+                        status: 'pending',
+                      });
+
+                      if (report) {
+                        console.log('✓ Report saved to database:', report.id);
+                        // Reload reports
+                        await loadIncidentReports();
+                      }
+                    } catch (dbError) {
+                      console.error('Database save failed:', dbError);
+                      // Don't throw - allow upload to complete even if DB fails
+                      alert(`Warning: Evidence uploaded but database save failed. Your file is safe in storage.`);
+                    }
+
+                    // Add file to local state
+                    const fileSize = (pendingFile.size / (1024 * 1024)).toFixed(1);
+                    const newFile = {
+                      id: Date.now(),
+                      icon: 'camera' as const,
+                      name: `${pendingFile.name.split('.')[0]}_${Date.now()}.enc`,
+                      date: 'Just now',
+                      size: `${fileSize} MB`,
+                      isNew: true,
+                    };
+
+                    setFiles(prev => [newFile, ...prev]);
+                    setUserContext('');
+                    setPendingFile(null);
+
+                    setTimeout(() => {
+                      setShowUploadFeedback(false);
+                      setTimeout(() => {
+                        setFiles(prev => prev.map(f => ({ ...f, isNew: false })));
+                      }, 300);
+                    }, 1000);
+                  } catch (error) {
+                    console.error('Error uploading evidence:', error);
+                    setShowUploadFeedback(false);
+                  }
+                }}
+                disabled={isAnalyzing}
+                className="flex-1 py-3 font-['Nunito',sans-serif] font-semibold text-[#9fb7a4] text-[15px] hover:bg-[rgba(159,183,164,0.05)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-r border-[rgba(194,167,184,0.2)]"
+              >
+                Skip
+              </button>
+              <button
+                onClick={handleAnalyzeEvidence}
+                disabled={isAnalyzing}
+                className="flex-1 py-3 font-['Nunito',sans-serif] font-semibold text-[#9fb7a4] text-[15px] hover:bg-[rgba(159,183,164,0.05)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <svg className="animate-spin size-3.5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>...</span>
+                  </>
+                ) : (
+                  'Analyze'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

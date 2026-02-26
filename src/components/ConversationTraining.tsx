@@ -1,7 +1,7 @@
 import { ArrowLeft, MessageCircle, Shield, AlertCircle, ChevronDown, ChevronUp, X, Sliders } from 'lucide-react';
 import { useState } from 'react';
 import svgPaths from "../imports/svg-dc2veddptv";
-import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { supabase, supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 
 interface ConversationTrainingProps {
   onNavigate: (screen: string) => void;
@@ -198,15 +198,26 @@ export function ConversationTraining({ onNavigate }: ConversationTrainingProps) 
       // Sanitize conversation history - remove any messages with null/empty content
       const sanitizedHistory = messages.filter(msg => msg && msg.text && typeof msg.text === 'string' && msg.text.trim() !== '');
 
-      // Call AI backend
+      // Get session for proper authorization
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // Build headers with anon key and session token
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'apikey': supabaseAnonKey, // Always include anon key
+      };
+
+      // Only add Authorization if user is logged in
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      // Call AI backend via OpenRouter
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-7f9db486/conversation/respond`,
+        `${supabaseUrl}/functions/v1/make-server-7f9db486/conversation/respond`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`
-          },
+          headers,
           body: JSON.stringify({
             scenarioId: selectedScenario,
             userMessage,

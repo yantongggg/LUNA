@@ -7,6 +7,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// Export URL and key for Edge Function calls
+export { supabaseUrl, supabaseAnonKey }
+
 // Types for our database
 export interface IncidentReport {
   id: string

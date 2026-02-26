@@ -1,24 +1,5 @@
-// Supabase Edge Function: Smart Evidence Analyzer
+// Supabase Edge Function: Smart Evidence Analyzer (DEMO VERSION - NO AUTH)
 // Analyzes evidence (images/audio) using OpenRouter GPT-4o for forensic analysis
-//
-// ============================================================
-// DUAL AUTHENTICATION MODE
-// ============================================================
-// 1. USER-AUTHENTICATED MODE:
-//    - Requires valid Supabase user JWT in Authorization header
-//    - Validates via userClient.auth.getUser()
-//    - Extracts user.id from JWT
-//
-// 2. ANONYMOUS/DEV MODE:
-//    - No valid user JWT required
-//    - Accepts anon key OR missing Authorization
-//    - Uses userId from request body if valid UUID
-//    - Generates UUID if userId invalid/missing
-//    - All DB ops use adminClient (service role) to bypass RLS
-//
-// Detection: isJwtLike(token) && getUser() succeeds → user mode
-//            otherwise → anonymous mode
-// ============================================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
@@ -28,21 +9,30 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
-// System prompt for Forensic Analyst AI
-const FORENSIC_ANALYST_SYSTEM_PROMPT = `You are 'Luna', an AI Forensic Analyst and Domestic Violence Safety Expert.
-Your task is to analyze an image (evidence) and user notes to identify patterns of abuse and structure them for legal use.
+// System prompt for Forensic AI Analyst
+const FORENSIC_ANALYST_SYSTEM_PROMPT = `You are a Forensic AI Analyst trained to analyze evidence for domestic violence incident reports intended for law enforcement (PDRM - Royal Malaysia Police).
 
-CRITICAL: Output strictly valid JSON with this structure (no markdown formatting, no code blocks):
+Your analysis must be:
+- OBJECTIVE: State only what is visibly observable in the evidence
+- CLINICAL: Use professional, forensic terminology
+- PRECISE: Avoid speculation, opinion, or emotional language
+- LEGALLY SOUND: Focus on facts that would be admissible in court
+
+CRITICAL OUTPUT REQUIREMENTS:
+1. You MUST return ONLY valid JSON - no markdown, no code blocks, no conversational text
+2. Do NOT wrap your response in \`\`\`json or \`\`\` markers
+3. Start your response immediately with the opening curly brace {
+4. End your response with the closing curly brace }
+5. Do not include any text before or after the JSON
+
+Return your analysis in this exact JSON format:
 {
-  "incident_summary": "Objective 1-sentence summary of the event.",
+  "incident_summary": "Objective 1-sentence summary of the incident based on visible evidence",
+  "clinical_observations": ["list of objective, clinically documented findings"],
+  "risk_level": "Low" | "Medium" | "High" | "Critical",
+  "risk_score": 0-100,
+  "recommendations": ["specific, actionable recommendations for victim safety and legal action"],
   "abuse_categories": ["Physical", "Emotional", "Economic", "Coercive Control", "Verbal", "Sexual", "Digital", "Stalking", "Neglect", "Other"],
-  "risk_assessment": {
-    "level": "Low" | "Medium" | "High" | "Critical",
-    "score": 0-100,
-    "indicators": ["specific observed indicators"],
-    "escalation_risk": "None" | "Low" | "Medium" | "High",
-    "immediate_danger": boolean
-  },
   "evidence_analysis": {
     "visible_damage": ["description of any visible injuries, damage, or concerning elements"],
     "environmental_context": ["description of environment, location, setting"],
@@ -53,7 +43,7 @@ CRITICAL: Output strictly valid JSON with this structure (no markdown formatting
     "potential_charges": ["relevant legal classifications based on evidence"],
     "evidence_strength": "Weak" | "Moderate" | "Strong" | "Conclusive",
     "corroboration_needed": ["what additional evidence would strengthen the case"],
-    "documentation_adequate": boolean
+    "documentation_adequate": true/false
   },
   "recommended_actions": {
     "immediate": ["immediate safety recommendations"],
@@ -61,70 +51,53 @@ CRITICAL: Output strictly valid JSON with this structure (no markdown formatting
     "documentation": ["what additional documentation to gather"],
     "support_resources": ["types of support services to contact"]
   },
-  "follow_up_questions": ["important clarifying questions for the user"],
-  "disclaimer": "Standard legal disclaimer about AI limitations and need for professional legal counsel"
+  "follow_up_questions": ["important clarifying questions for the victim"]
 }
 
-GUIDELINES:
-- Be objective and factual in your analysis
-- Focus on visible evidence and user-provided context
-- Use precise legal and medical terminology where appropriate
-- Avoid speculation; state what is observable
-- Prioritize user safety in all recommendations
-- Include appropriate disclaimers about AI limitations
-- If image is unclear or insufficient, state so clearly
-- Maintain professional, supportive tone
-- Consider patterns of abuse, not just isolated incidents
-- Identify power imbalances, control tactics, or coercion indicators`
+ANALYSIS GUIDELINES:
+1. Document visible injuries, damage, or concerning elements objectively
+2. Note environmental context (location conditions, signs of struggle, etc.)
+3. Identify temporal markers (dates, times, sequence indicators)
+4. Assess evidence strength for legal proceedings
+5. Recommend specific corroborating evidence needed
+6. Suggest immediate, legal, documentation, and support actions
+7. Maintain professional, clinical tone throughout
 
-// ============================================================
-// HELPER FUNCTIONS
-// ============================================================
+REMEMBER: Output ONLY the raw JSON object. No markdown formatting, no code blocks, no additional text.`;
 
-/**
- * Check if token looks like JWT (3 parts separated by dots)
- * Note: This is a heuristic, not cryptographic validation
- */
-function isJwtLike(token: string): boolean {
-  return token.split('.').length === 3
-}
-
-/**
- * Validate if string is a valid UUID v4 format
- * Required for database user_id column (UUID type)
- */
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
-}
-
-/**
- * Safe token logging - never expose full token
- */
-function safeTokenInfo(token: string): string {
-  if (!token || token.length < 12) return "(none or too short)"
-  return `${token.slice(0, 12)}... len=${token.length}`
-}
-
-/**
- * Extract file path from Supabase Storage URL
- */
+// Extract file path from storage URL
 function extractFilePath(storageUrl: string): string {
   try {
     const url = new URL(storageUrl)
-    const parts = url.pathname.split("/")
-    const bucketIndex = parts.indexOf("object")
+    // 解码路径（防止文件名有空格等特殊字符）
+    const path = decodeURIComponent(url.pathname)
+    
+    // 情况 1: 标准公开 URL (.../public/evidence/folder/file.jpg)
+    // 我们只需要 folder/file.jpg
+    if (path.includes("/public/evidence/")) {
+      return path.split("/public/evidence/")[1]
+    }
+    
+    // 情况 2: 签名私有 URL (.../sign/evidence/folder/file.jpg)
+    if (path.includes("/sign/evidence/")) {
+      return path.split("/sign/evidence/")[1]
+    }
+
+    // 情况 3: 最后的保底方案
+    // 如果路径里包含 "evidence/"，取它后面的所有内容
+    const parts = path.split("/")
+    const bucketIndex = parts.indexOf("evidence")
     if (bucketIndex !== -1 && bucketIndex + 1 < parts.length) {
       return parts.slice(bucketIndex + 1).join("/")
     }
-    return parts[parts.length - 1] || storageUrl
+    
+    return path
   } catch {
     return storageUrl
   }
 }
 
-/**
- * Safe base64 encoding for large binary (avoid call stack overflow)
- */
+// Safe base64 encoding for large binary
 function uint8ToBase64(u8: Uint8Array): string {
   const CHUNK = 0x8000
   let binary = ""
@@ -135,169 +108,136 @@ function uint8ToBase64(u8: Uint8Array): string {
   return btoa(binary)
 }
 
-// ============================================================
-// MAIN HANDLER
-// ============================================================
+/**
+ * Sanitize and extract JSON from AI response
+ * Handles Markdown code blocks, trailing text, and common formatting issues
+ */
+function sanitizeAndExtractJSON(rawText: string): string {
+  if (!rawText || typeof rawText !== 'string') {
+    throw new Error('Empty or invalid response from AI');
+  }
+
+  let cleaned = rawText.trim();
+
+  // Remove markdown code blocks: ```json and ```
+  cleaned = cleaned.replace(/```json\s*/gi, '');
+  cleaned = cleaned.replace(/```\s*/g, '');
+
+  // Remove any other markdown-style code blocks
+  cleaned = cleaned.replace(/^```\s*([\s\S]*?)\s*```$/g, '$1');
+
+  // Try to extract JSON using regex (find first { to last })
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+
+  if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+
+  // Trim again and return
+  return cleaned.trim();
+}
+
+/**
+ * Parse AI response with robust error handling
+ */
+function parseAIResponse(rawText: string): any {
+  console.log('Raw AI response (first 300 chars):', rawText.slice(0, 300));
+
+  // First attempt: Direct parse
+  try {
+    return JSON.parse(rawText);
+  } catch (directError) {
+    console.log('Direct JSON parse failed, attempting sanitization...');
+  }
+
+  // Second attempt: Sanitize and parse
+  try {
+    const sanitized = sanitizeAndExtractJSON(rawText);
+    console.log('Sanitized JSON (first 300 chars):', sanitized.slice(0, 300));
+    return JSON.parse(sanitized);
+  } catch (sanitizeError) {
+    console.error('Sanitization also failed:', sanitizeError);
+    console.error('Full raw response:', rawText);
+    throw new Error(`Invalid JSON response from AI. Could not extract valid JSON from response.`);
+  }
+}
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
   }
 
+  let userIdToUse: string | undefined
+  let reportIdToUpdate: string | undefined
+
+  // Create Admin Client (Service Role) - God Mode, ignores RLS
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? ""
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+
+  // Always use adminClient for everything
+  const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
   try {
-    // ============================================================
-    // PARSE REQUEST BODY
-    // ============================================================
-    let body: any
+    // Parse request body
+    let requestBody: any
     try {
-      body = await req.json()
-    } catch {
+      requestBody = await req.json()
+    } catch (e) {
       return new Response(
-        JSON.stringify({ success: false, error: "Invalid JSON body" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "Invalid request body. Please provide valid JSON." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       )
     }
 
-    const { evidenceUrl, userContext, evidenceType, reportId, userId } = body
+    const { evidenceUrl, userContext, evidenceType, reportId, userId } = requestBody
 
-    // Validate required fields
     if (!evidenceUrl) {
       return new Response(
         JSON.stringify({ success: false, error: "evidenceUrl is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       )
     }
 
-    // ============================================================
-    // ENVIRONMENT SETUP
-    // ============================================================
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? ""
-    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY") ?? ""
+    console.log("Analyzing evidence (DEMO MODE):", { evidenceUrl, evidenceType, reportId, userId })
 
-    if (!SUPABASE_URL || !ANON_KEY || !SERVICE_ROLE_KEY) {
-      console.error("[analyze-evidence] Missing Supabase environment variables")
-      return new Response(
-        JSON.stringify({ success: false, error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      )
-    }
-
-    if (!OPENROUTER_API_KEY) {
-      console.error("[analyze-evidence] OPENROUTER_API_KEY not configured")
-      return new Response(
-        JSON.stringify({ success: false, error: "OPENROUTER_API_KEY is not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      )
-    }
-
-    // ============================================================
-    // CLIENT SETUP
-    // ============================================================
-    // adminClient: Service role for DB/Storage operations (bypasses RLS)
-    const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
-
-    // userClient: For validating user JWT only (not used for DB ops)
-    const authHeader = req.headers.get("Authorization") ?? ""
-    const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : ""
-
-    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    })
-
-    // ============================================================
-    // AUTHENTICATION LOGIC
-    // ============================================================
-    let authMode: "user" | "anonymous" = "anonymous"
-    let effectiveUserId: string | null = null
-
-    console.log("[analyze-evidence] === REQUEST START ===")
-    console.log("[analyze-evidence] evidenceUrl:", evidenceUrl)
-    console.log("[analyze-evidence] evidenceType:", evidenceType ?? "image")
-    console.log("[analyze-evidence] reportId:", reportId ?? "(none)")
-    console.log("[analyze-evidence] userId from body:", userId ?? "(none)")
-    console.log("[analyze-evidence] authHeader:", bearer ? safeTokenInfo(bearer) : "none")
-
-    // Try user-authenticated mode if token looks like JWT
-    if (bearer && isJwtLike(bearer)) {
-      console.log("[analyze-evidence] Token looks like JWT, attempting validation...")
-
-      try {
-        const { data, error } = await userClient.auth.getUser(bearer)
-
-        if (!error && data?.user?.id) {
-          authMode = "user"
-          effectiveUserId = data.user.id
-          console.log("[analyze-evidence] ✓ USER-AUTHENTICATED MODE")
-          console.log("[analyze-evidence] User ID:", effectiveUserId)
-        } else {
-          console.log("[analyze-evidence] JWT validation failed:", error?.message ?? "Unknown")
-          console.log("[analyze-evidence] Falling back to anonymous mode...")
-        }
-      } catch (err) {
-        console.log("[analyze-evidence] JWT validation threw error:", err)
-        console.log("[analyze-evidence] Falling back to anonymous mode...")
-      }
-    } else if (bearer) {
-      console.log("[analyze-evidence] Token does not look like JWT (likely anon key)")
-      console.log("[analyze-evidence] Using anonymous mode...")
+    // --- AUTH BYPASS (Modified for Demo) ---
+    // Instead of checking the Token, we simply trust the userId sent by the frontend.
+    // If no userId is sent, we use the fallback ID we fixed earlier.
+    
+    if (userId) {
+        userIdToUse = userId
     } else {
-      console.log("[analyze-evidence] No Authorization header, using anonymous mode...")
+        // Fallback to the ID we manually inserted into the DB, just in case
+        userIdToUse = "edf52eda-c0bf-46e0-b03c-23ef4131578f" 
     }
+    
+    console.log("Using User ID (Skipped Auth Check):", userIdToUse)
 
-    // Anonymous mode: Use userId from body if valid UUID, otherwise generate
-    if (!effectiveUserId) {
-      authMode = "anonymous"
-      console.log("[analyze-evidence] ✓ ANONYMOUS/DEV MODE")
+    // --- Find/create report ---
+    reportIdToUpdate = reportId
 
-      if (typeof userId === "string" && isUuid(userId)) {
-        effectiveUserId = userId
-        console.log("[analyze-evidence] Using userId from body:", effectiveUserId)
-      } else {
-        effectiveUserId = crypto.randomUUID()
-        console.log("[analyze-evidence] Generated new UUID:", effectiveUserId)
-        console.log("[analyze-evidence] ⚠ TIP: Provide stable userId in body for better data isolation")
-      }
-    }
-
-    console.log("[analyze-evidence] Final auth mode:", authMode)
-    console.log("[analyze-evidence] Effective user ID:", effectiveUserId)
-    console.log("[analyze-evidence] ==============================")
-
-    // ============================================================
-    // FIND OR CREATE REPORT
-    // ============================================================
-    let reportIdToUse = reportId as string | undefined
-
-    if (!reportIdToUse) {
-      // Check for existing report by (user_id, evidence_url)
-      // Uses composite unique constraint
-      const { data: existing, error: findError } = await adminClient
+    if (!reportIdToUpdate) {
+      // Use adminClient to bypass RLS
+      const { data: existingReport } = await adminClient
         .from("incident_reports")
         .select("id")
-        .eq("user_id", effectiveUserId)
         .eq("evidence_url", evidenceUrl)
-        .maybeSingle()
+        .eq("user_id", userIdToUse)
+        .single()
 
-      if (findError) {
-        console.error("[analyze-evidence] Error finding existing report:", findError)
-      }
-
-      if (existing?.id) {
-        reportIdToUse = existing.id
-        console.log("[analyze-evidence] Found existing report:", reportIdToUse)
+      if (existingReport) {
+        reportIdToUpdate = existingReport.id
+        console.log("Found existing report:", reportIdToUpdate)
       } else {
-        // Create new report
-        console.log("[analyze-evidence] Creating new incident report...")
-        const { data: created, error: createError } = await adminClient
+        console.log("Creating new incident report...")
+        const { data: newReport, error: createError } = await adminClient
           .from("incident_reports")
           .insert({
-            user_id: effectiveUserId,
+            user_id: userIdToUse,
             evidence_url: evidenceUrl,
-            evidence_type: evidenceType ?? "image",
-            user_context: userContext ?? null,
+            evidence_type: evidenceType || "image",
+            user_context: userContext || null,
             status: "analyzing",
             risk_score: 0,
             risk_level: null,
@@ -307,60 +247,37 @@ serve(async (req) => {
           .single()
 
         if (createError) {
-          console.error("[analyze-evidence] Error creating report:", createError)
-          return new Response(
-            JSON.stringify({ success: false, error: `Failed to create report: ${createError.message}` }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          )
+          console.error("Error creating report:", createError)
+          throw new Error(`Failed to create incident report: ${createError.message}`)
         }
 
-        reportIdToUse = created.id
-        console.log("[analyze-evidence] Created new report:", reportIdToUse)
+        reportIdToUpdate = newReport.id
+        console.log("Created new report:", reportIdToUpdate)
       }
     }
 
-    // ============================================================
-    // DOWNLOAD & ENCODE IMAGE
-    // ============================================================
+    // --- Download + base64 image ---
     let imageData: string | null = null
 
     if (evidenceUrl.includes("supabase.co")) {
-      console.log("[analyze-evidence] Downloading image from Supabase Storage...")
+      console.log("Downloading image from Supabase Storage...")
       const filePath = extractFilePath(evidenceUrl)
-      console.log("[analyze-evidence] Extracted file path:", filePath)
-
+      
+      // Use adminClient to download (bypasses storage policies)
       const { data: fileData, error: fileError } = await adminClient
         .storage
         .from("evidence")
         .download(filePath)
 
       if (fileError) {
-        console.error("[analyze-evidence] Error downloading file:", fileError)
-
-        // Update report status to error
-        await adminClient
-          .from("incident_reports")
-          .update({ status: "error", error_message: `Failed to download file: ${fileError.message}` })
-          .eq("id", reportIdToUse)
-
-        return new Response(
-          JSON.stringify({ success: false, error: `Failed to download file: ${fileError.message}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        )
+        console.error("Error downloading file:", fileError)
+        throw new Error(`Failed to download file: ${fileError.message}`)
       }
-
-      if (!fileData) {
-        console.error("[analyze-evidence] File data is empty")
-        return new Response(
-          JSON.stringify({ success: false, error: "File data is empty" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        )
-      }
+      if (!fileData) throw new Error("File data is empty")
 
       const arrayBuffer = await fileData.arrayBuffer()
       const uint8Array = new Uint8Array(arrayBuffer)
 
-      // Detect MIME type
       let mimeType = "image/jpeg"
       const urlLower = evidenceUrl.toLowerCase()
       if (urlLower.includes(".png")) mimeType = "image/png"
@@ -370,162 +287,173 @@ serve(async (req) => {
       const base64 = uint8ToBase64(uint8Array)
       imageData = `data:${mimeType};base64,${base64}`
 
-      console.log("[analyze-evidence] Image converted to Base64, size:", imageData.length, "chars")
+      console.log("Image converted to Base64, size:", imageData.length)
     }
 
-    // ============================================================
-    // CALL OPENROUTER API
-    // ============================================================
-    const messages: any[] = [{ role: "system", content: FORENSIC_ANALYST_SYSTEM_PROMPT }]
+    // --- OpenRouter API (using Google Gemini 2.0 Flash via OpenRouter) ---
+    const openrouterApiKey = Deno.env.get("OPENROUTER_API_KEY")
+    if (!openrouterApiKey) throw new Error("OPENROUTER_API_KEY is not configured")
 
-    const userPrompt = userContext
-      ? `User Context: ${userContext}\n\nPlease analyze this evidence and provide a forensic assessment for legal documentation purposes.`
-      : "Please analyze this evidence and provide a forensic assessment for legal documentation purposes."
+    console.log("Using OpenRouter with Gemini 2.0 Flash for analysis...")
 
-    messages.push({ role: "user", content: userPrompt })
+    // Build messages with Forensic Analyst persona
+    const messages: any[] = [{ role: "system", content: FORENSIC_ANALYST_SYSTEM_PROMPT }];
 
-    // Add image if available
-    if (imageData && (evidenceType ?? "image") === "image") {
-      messages[1].content = [
-        { type: "text", text: userPrompt },
-        { type: "image_url", image_url: { url: imageData, detail: "high" } },
-      ]
+    // Build user prompt for forensic analysis
+    let userPrompt = userContext
+      ? `Victim Statement: "${userContext}"\n\n`
+      : "No victim statement provided.\n\n";
+
+    userPrompt += "Analyze the attached evidence and provide a comprehensive forensic assessment following the JSON schema specified. Focus on objective, clinically documented findings suitable for law enforcement reporting.";
+
+    // Build content based on type
+    if (imageData && evidenceType === "image") {
+      // Image mode: send text + image
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text: userPrompt },
+          { type: "image_url", image_url: { url: imageData, detail: "high" } },
+        ]
+      });
+    } else {
+      // Audio or text-only mode
+      messages.push({
+        role: "user",
+        content: userPrompt
+      });
     }
 
-    console.log("[analyze-evidence] Calling OpenRouter API (model: openai/gpt-4o)...")
 
+    // Call OpenRouter API with Gemini 2.5 Flash
     const openrouterResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        "Authorization": `Bearer ${openrouterApiKey}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://luna-safety.app",
-        "X-Title": "Luna Safety App",
+        "X-Title": "Luna Forensic AI - Evidence Analysis",
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o",
+        model: "google/gemini-2.5-flash",
         messages,
-        max_tokens: 3000,
-        temperature: 0.3,
+        max_tokens: 4000,  // Increased from 800 to prevent truncation of complex JSON responses
+        temperature: 0.7,  // Slightly lower for more consistent forensic analysis
         response_format: { type: "json_object" },
       }),
     })
 
     if (!openrouterResponse.ok) {
       const errorText = await openrouterResponse.text()
-      console.error("[analyze-evidence] OpenRouter API error:", openrouterResponse.status, errorText)
-
-      // Update report status to error
-      await adminClient
-        .from("incident_reports")
-        .update({
-          status: "error",
-          error_message: `OpenRouter error: ${openrouterResponse.status} - ${errorText}`,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", reportIdToUse)
-
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: `OpenRouter API error: ${openrouterResponse.status}`,
-          details: errorText
-        }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      )
+      console.error("OpenRouter API error:", errorText)
+      throw new Error(`OpenRouter API error: ${openrouterResponse.status} - ${errorText}`)
     }
 
     const openrouterData = await openrouterResponse.json()
     const analysisText = openrouterData.choices?.[0]?.message?.content
+    if (!analysisText) throw new Error("No analysis returned from AI")
 
-    if (!analysisText) {
-      console.error("[analyze-evidence] No analysis content returned from AI")
-
-      await adminClient
-        .from("incident_reports")
-        .update({ status: "error", error_message: "No AI content returned" })
-        .eq("id", reportIdToUse)
-
-      return new Response(
-        JSON.stringify({ success: false, error: "No AI content returned" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      )
-    }
-
-    // Parse AI response
+    // Parse AI response with robust sanitization
     let analysisData: any
     try {
-      analysisData = typeof analysisText === "string" ? JSON.parse(analysisText) : analysisText
+      analysisData = parseAIResponse(analysisText)
     } catch (parseError) {
-      console.error("[analyze-evidence] Failed to parse AI response:", analysisText?.slice?.(0, 200))
-
-      await adminClient
-        .from("incident_reports")
-        .update({ status: "error", error_message: "AI returned non-JSON" })
-        .eq("id", reportIdToUse)
-
-      return new Response(
-        JSON.stringify({ success: false, error: "AI returned non-JSON" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      )
+      console.error('Failed to parse AI response:', parseError)
+      throw parseError
     }
 
-    // Extract risk level
-    const riskLevel = analysisData?.risk_assessment?.level || "Medium"
-    const riskScoreMap: Record<string, number> = { Low: 25, Medium: 50, High: 75, Critical: 100 }
-    const riskScore = riskScoreMap[riskLevel] ?? 50
+    // Extract risk level from forensic analysis
+    const riskLevel = analysisData?.risk_level || "Medium"
+    const riskScore = analysisData?.risk_score || 50
 
-    // ============================================================
-    // UPDATE REPORT WITH RESULTS
-    // ============================================================
+    // Map the new forensic JSON structure to maintain compatibility
+    // The frontend expects ai_analysis in a specific format
+    const formattedAnalysis = {
+      incident_summary: analysisData?.incident_summary || "No summary provided.",
+      clinical_observations: analysisData?.clinical_observations || [],
+      abuse_categories: analysisData?.abuse_categories || [],
+      risk_assessment: {
+        level: riskLevel,
+        score: riskScore,
+        indicators: analysisData?.clinical_observations || [],
+        escalation_risk: riskLevel === "High" || riskLevel === "Critical" ? "High" : "Medium",
+        immediate_danger: riskLevel === "Critical"
+      },
+      evidence_analysis: analysisData?.evidence_analysis || {
+        visible_damage: [],
+        environmental_context: [],
+        temporal_markers: [],
+        supporting_details: []
+      },
+      legal_findings: analysisData?.legal_findings || {
+        potential_charges: [],
+        evidence_strength: "Moderate",
+        corroboration_needed: [],
+        documentation_adequate: false
+      },
+      recommended_actions: analysisData?.recommended_actions || {
+        immediate: [],
+        legal: [],
+        documentation: [],
+        support_resources: []
+      },
+      follow_up_questions: analysisData?.follow_up_questions || [],
+      recommendations: analysisData?.recommendations || []
+    }
+
+    // Save results using adminClient
     const { error: updateError } = await adminClient
       .from("incident_reports")
       .update({
-        ai_analysis: analysisData,
+        ai_analysis: formattedAnalysis,
         risk_score: riskScore,
         risk_level: riskLevel,
         status: "completed",
         updated_at: new Date().toISOString(),
       })
-      .eq("id", reportIdToUse)
+      .eq("id", reportIdToUpdate)
+      .eq("user_id", userIdToUse)
 
     if (updateError) {
-      console.error("[analyze-evidence] Error saving analysis:", updateError)
-      // Don't return error - analysis succeeded, just DB update failed
+      console.error("Error saving analysis:", updateError)
+      throw new Error(`Failed to save analysis: ${updateError.message}`)
     }
 
-    console.log("[analyze-evidence] ✓ Analysis completed successfully")
-    console.log("[analyze-evidence] Report ID:", reportIdToUse)
-    console.log("[analyze-evidence] Risk Level:", riskLevel)
-    console.log("[analyze-evidence] Risk Score:", riskScore)
-
-    // ============================================================
-    // RETURN SUCCESS RESPONSE
-    // ============================================================
     return new Response(
       JSON.stringify({
         success: true,
-        authMode,
-        effectiveUserId,
-        reportId: reportIdToUse,
-        analysis: analysisData,
+        reportId: reportIdToUpdate,
+        analysis: formattedAnalysis,
         riskScore,
         riskLevel,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     )
-
   } catch (error: any) {
-    console.error("[analyze-evidence] === UNHANDLED ERROR ===")
-    console.error("[analyze-evidence] Error:", error?.message ?? error)
-    console.error("[analyze-evidence] Stack:", error?.stack)
+    console.error("Error in analyze-evidence function:", error)
 
+    // best-effort update report status
+    try {
+      if (reportIdToUpdate && userIdToUse) {
+        await adminClient
+          .from("incident_reports")
+          .update({
+            status: "error",
+            error_message: error?.message ?? String(error),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", reportIdToUpdate)
+          .eq("user_id", userIdToUse)
+      }
+    } catch (e) {
+      console.error("Error updating failure status:", e)
+    }
+
+    const msg = error?.message ?? "An unexpected error occurred"
+    // Always return 400 for errors now, since 401 (Auth) is basically disabled
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error?.message ?? "An unexpected error occurred"
-      }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: false, error: msg }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     )
   }
 })

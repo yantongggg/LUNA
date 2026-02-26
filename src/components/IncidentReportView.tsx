@@ -110,195 +110,55 @@ export function IncidentReportView({ report, onClose, onBack }: IncidentReportVi
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      {/* The Window */}
-      <div className="flex flex-col w-full max-w-sm bg-[#1F2937] rounded-2xl border border-gray-700 shadow-2xl max-h-[85vh] overflow-hidden">
-        {/* 1. Header (Fixed) */}
-        <div className="shrink-0 flex items-center justify-between p-4 border-b border-gray-800">
-          <div className="flex items-center gap-3">
-            {/* Back Button (when onBack is provided) */}
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="h-8 w-8 rounded-full bg-[rgba(194,167,184,0.1)] flex items-center justify-center hover:bg-[rgba(194,167,184,0.2)] transition-colors shrink-0"
+    <div className="absolute inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Simplified Card (Natural Height) */}
+      <div className="relative z-10 w-full max-w-sm bg-[#1F2937] border border-gray-700 rounded-2xl shadow-2xl p-6 flex flex-col gap-5">
+
+        {/* Header */}
+        <div className="flex justify-between items-start">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-semibold text-white">Incident Report</h2>
+            {report.risk_level && (
+              <span
+                className="text-xs px-2 py-1 rounded-full w-fit font-medium"
+                style={{
+                  backgroundColor: currentRisk.bg,
+                  color: currentRisk.text,
+                }}
               >
-                <div className="h-4 w-4 text-[#eaeaf0]">
-                  <ChevronLeftIcon />
-                </div>
-              </button>
+                {report.risk_level} Risk · {report.risk_score}/100
+              </span>
             )}
-
-            {/* Small Icon - h-6 w-6 */}
-            <div className="h-6 w-6 rounded-full bg-[rgba(159,183,164,0.15)] flex items-center justify-center shrink-0">
-              <div className="h-3.5 w-3.5 text-[#9fb7a4]">
-                <ShieldIcon />
-              </div>
-            </div>
-
-            {/* Title Group */}
-            <div className="flex-1 min-w-0">
-              <h1 className="font-['Nunito',sans-serif] font-semibold text-[#eaeaf0] text-[15px] leading-tight">
-                Incident Report
-              </h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                {report.risk_level && (
-                  <span
-                    className="px-2 py-0.5 rounded-md text-[10px] font-medium"
-                    style={{
-                      backgroundColor: currentRisk.bgSolid,
-                      color: currentRisk.text
-                    }}
-                  >
-                    {report.risk_level} Risk
-                  </span>
-                )}
-                <span className="text-[#9fb7a4] text-[11px]">
-                  {report.risk_score}/100
-                </span>
-              </div>
-            </div>
           </div>
-
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="h-8 w-8 rounded-full bg-[rgba(194,167,184,0.1)] flex items-center justify-center hover:bg-[rgba(194,167,184,0.2)] transition-colors shrink-0"
-          >
-            <div className="h-4 w-4">
-              <XIcon />
-            </div>
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors">
+            <div className="h-5 w-5"><XIcon /></div>
           </button>
         </div>
 
-        {/* 2. Body (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Summary Text (Allows natural wrapping) */}
+        {analysis?.incident_summary && (
+          <div className="text-sm text-gray-300 leading-relaxed">
+            {analysis.incident_summary}
+          </div>
+        )}
 
-          {/* Section: Evidence Analysis */}
-          {analysis?.evidence_analysis && (
-            <div>
-              <h2 className="font-['Nunito',sans-serif] font-semibold text-[#eaeaf0] text-[14px] mb-3">
-                Evidence Analysis
-              </h2>
-              <div className="bg-[rgba(42,44,50,0.3)] rounded-xl p-3 border border-[rgba(194,167,184,0.15)]">
-                <h3 className="font-['Nunito',sans-serif] font-medium text-[#a1a1af] text-[12px] mb-2">Visible Findings</h3>
-                <ul className="space-y-1.5">
-                  {analysis.evidence_analysis.visible_damage?.map((item, idx) => (
-                    <li key={idx} className="font-['Nunito',sans-serif] font-normal text-[#eaeaf0] text-[12px] flex items-start gap-2">
-                      <span className="text-[#9fb7a4] mt-0.5">•</span>
-                      <span>{item}</span>
-                    </li>
-                  )) || <li className="font-['Nunito',sans-serif] font-normal text-[#9fb7a4] text-[12px]">Visible indicators documented</li>}
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {/* Section: Legal Findings */}
-          {analysis?.legal_findings && (
-            <div>
-              <h2 className="font-['Nunito',sans-serif] font-semibold text-[#eaeaf0] text-[14px] mb-3">
-                Legal Findings
-              </h2>
-              <div className="bg-[rgba(42,44,50,0.3)] rounded-xl p-3 border border-[rgba(194,167,184,0.15)]">
-                <div className="flex justify-between items-center py-2 border-b border-gray-800/50 mb-2">
-                  <span className="font-['Nunito',sans-serif] font-normal text-[#a1a1af] text-[12px]">Evidence Strength</span>
-                  <span className="font-['Nunito',sans-serif] font-semibold text-[#eaeaf0] text-[12px]">{analysis.legal_findings.evidence_strength}</span>
-                </div>
-                <div>
-                  <h3 className="font-['Nunito',sans-serif] font-medium text-[#a1a1af] text-[12px] mb-2">Potential Charges</h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {analysis.legal_findings.potential_charges.map((charge, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-0.5 rounded-md bg-[rgba(159,183,164,0.1)] border border-[rgba(159,183,164,0.2)] text-[#9fb7a4] text-[11px]"
-                      >
-                        {charge}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Section: Recommended Actions */}
-          {analysis?.recommended_actions && (
-            <div>
-              <h2 className="font-['Nunito',sans-serif] font-semibold text-[#eaeaf0] text-[14px] mb-3">
-                Recommended Actions
-              </h2>
-              <div className="bg-[rgba(42,44,50,0.3)] rounded-xl p-3 border border-[rgba(194,167,184,0.15)]">
-                <h3 className="font-['Nunito',sans-serif] font-medium text-[#a1a1af] text-[12px] mb-2">Immediate</h3>
-                <ul className="space-y-2">
-                  {analysis.recommended_actions.immediate?.map((action, idx) => (
-                    <li key={idx} className="font-['Nunito',sans-serif] font-normal text-[#eaeaf0] text-[12px] flex items-start gap-2">
-                      <span className="text-[#9fb7a4] shrink-0 mt-0.5 font-semibold">{idx + 1}.</span>
-                      <span>{action}</span>
-                    </li>
-                  )) || (
-                    <>
-                      <li className="font-['Nunito',sans-serif] font-normal text-[#eaeaf0] text-[12px] flex items-start gap-2">
-                        <span className="text-[#9fb7a4] shrink-0 mt-0.5 font-semibold">1.</span>
-                        <span>Ensure personal safety</span>
-                      </li>
-                      <li className="font-['Nunito',sans-serif] font-normal text-[#eaeaf0] text-[12px] flex items-start gap-2">
-                        <span className="text-[#9fb7a4] shrink-0 mt-0.5 font-semibold">2.</span>
-                        <span>Document all evidence</span>
-                      </li>
-                      <li className="font-['Nunito',sans-serif] font-normal text-[#eaeaf0] text-[12px] flex items-start gap-2">
-                        <span className="text-[#9fb7a4] shrink-0 mt-0.5 font-semibold">3.</span>
-                        <span>Contact support services</span>
-                      </li>
-                    </>
-                  )}
-                </ul>
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* 3. Footer (Fixed) */}
-        <div className="shrink-0 p-4 border-t border-gray-800 flex gap-3">
+        {/* Footer Buttons */}
+        <div className="flex gap-3 pt-2">
           <button
             onClick={onExportClick}
             disabled={isExporting || report.status !== 'completed'}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#9fb7a4] hover:bg-[#8aa78f] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="flex-1 bg-[#9FB7A4] text-black font-medium py-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            <div className="h-4 w-4">
-              <DownloadIcon />
-            </div>
-            <span className="font-['Nunito',sans-serif] font-semibold text-[#1e1f23] text-[13px]">
-              {isExporting ? 'Generating...' : 'Export PDF'}
-            </span>
-          </button>
-          <button
-            onClick={onCopyForEReporting}
-            disabled={isExporting}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#003C8D] hover:bg-[#0056B3] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            <div className="h-4 w-4">
-              <svg className="block h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {/* 👇 换成这个干净的 Path */}
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" 
-                />
-              </svg>
-            </div>
-            <span className="font-['Nunito',sans-serif] font-semibold text-white text-[13px]">
-              Copy for e-Reporting
-            </span>
+            {isExporting ? 'Generating...' : 'Export PDF'}
           </button>
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-[rgba(194,167,184,0.15)] hover:bg-[rgba(194,167,184,0.25)] border border-[rgba(194,167,184,0.3)] transition-all"
+            className="flex-1 bg-gray-700 text-white font-medium py-2.5 rounded-xl hover:bg-gray-600 transition-all"
           >
-            <span className="font-['Nunito',sans-serif] font-semibold text-[#eaeaf0] text-[13px]">
-              Close
-            </span>
+            Close
           </button>
         </div>
       </div>

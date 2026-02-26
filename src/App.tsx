@@ -27,7 +27,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-[430px] h-[932px] bg-white rounded-[60px] shadow-2xl overflow-hidden relative border-[14px] border-gray-900">
-        <div className="w-full h-full min-h-screen overflow-y-auto">
+        <div className="w-full h-full overflow-y-auto">
           {currentScreen === 'camouflage' && (
             <CamouflageHome onUnlock={handleUnlock} />
           )}

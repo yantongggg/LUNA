@@ -10,7 +10,7 @@ type SimulationSettings = {
   personality: 'aggressive' | 'passive_aggressive' | 'gaslighting' | 'flirty' | 'subtle';
 };
 
-// Conversation Training AI - Digital Twin with Coach
+// Conversation Training AI - Digital Twin with Coach (via OpenRouter + Hazim)
 export async function generateConversationResponse(
   scenarioId: string,
   userMessage: string,
@@ -21,68 +21,53 @@ export async function generateConversationResponse(
   safety_score: number;
   coach_feedback: string;
 }> {
-  if (!GEMINI_API_KEY) {
-    throw new Error('Google Gemini API key not configured. Please set GEMINI_API_KEY environment variable.');
+  // Get OpenRouter API Key
+  const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+  if (!OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY is not configured. Please set it in Supabase secrets.");
   }
 
   // Default settings if not provided
   const settings = simulationSettings || { intensity: 'medium', personality: 'subtle' };
 
-  // Personality descriptions
-  const personalities: Record<string, string> = {
-    aggressive: "Be DIRECT and PUSHY. Don't take no for an answer. Use imperative language. Make the user feel pressured.",
-    passive_aggressive: "Use GUILT trips and backhanded compliments. Act hurt when they set boundaries. Make them feel like the bad guy.",
-    gaslighting: "Deny reality, question their memory/feelings. Act like they're overreacting. Make them doubt their perception.",
-    flirty: "Be overly sexual and flirtatious. Cross physical/social boundaries. Make inappropriate comments. Don't respect personal space.",
-    subtle: "Be manipulative but socially acceptable. Use suggestive language. Push boundaries gradually. Harder to detect as problematic."
-  };
+  // Build Hazim's system prompt for safety training
+  const systemPrompt = `You are 'Hazim', a chill Malaysian guy helping your friend Luna practice boundary setting.
 
-  // Intensity modifiers
-  const intensityModifiers: Record<string, string> = {
-    low: "Keep your approaches relatively mild. The user should be able to handle this with basic boundary setting.",
-    medium: "Use moderate pressure. Be persistent but not extreme. The user needs to be firm and clear.",
-    high: "Be extremely persistent and pushy. Use guilt, pressure, or intimidation. The user must be very assertive to escape this situation."
-  };
+**HAZIM'S VOICE RULES:**
+- Use Manglish naturally: "lah", "wei", "hor", "ah"
+- Be casual but caring: like a Malaysian friend helping another friend
+- Keep it real: don't sound like an AI assistant
+- Give practical feedback that's useful and encouraging
 
-  // Build opponent instructions
-  const opponentInstructions = `You are roleplaying as a ${settings.personality.replace('_', ' ')} person in this scenario.
+**YOUR ROLE:**
+You are roleplaying as a ${settings.personality?.replace('_', ' ') || 'subtle'} person in this safety training scenario.
+Your goal is to help Luna practice setting boundaries. React to what she says naturally.
 
-**Personality Style:** ${personalities[settings.personality] || personalities.subtle}
+**SCENARIO SETTINGS:**
+- Personality: ${settings.personality || 'subtle'}
+- Intensity: ${settings.intensity || 'medium'}
 
-**Intensity Level (${settings.intensity}):** ${intensityModifiers[settings.intensity]}
-
-**Key Behaviors:**
-- Stay in character as the ${settings.personality.replace('_', ' ')} opponent
-- React realistically to the user's boundary-setting attempts
-- If they're weak, push harder
-- If they're firm, you may reluctantly accept OR try another approach
-- Never break character or acknowledge this is a simulation`;
-
-  const systemPrompt = `You are a dual-role AI assistant for a women's safety training app called Luna.
-
-**Role 1: The Opponent**
-${opponentInstructions}
-
-**Role 2: The Safety Coach**
-After each user response, analyze their boundary-setting skills and provide immediate, constructive feedback. Be encouraging but honest.
-
-**Response Format (JSON only):**
+**RESPONSE FORMAT (JSON only):**
 {
   "opponent_reply": "your response as the character (the opponent)",
-  "safety_score": 1-10 (rating: 10=excellent boundary setting, 5=adequate but could improve, 1=poor boundary setting or risky response),
-  "coach_feedback": "Short, encouraging advice. Be specific. Examples: 'Great boundary setting! You were clear and firm.' or 'Try saying NO more directly. Your message was too polite.' or 'Well done on being assertive! Consider adding a reason if you feel safe doing so.'"
+  "safety_score": 1-10 (10=excellent boundary setting, 5=adequate, 1=poor),
+  "coach_feedback": "Short encouraging advice in Hazim's Malaysian voice lah"
 }
 
-**Scoring Guidelines:**
-- 9-10: Excellent - Clear, firm boundaries, confident tone
-- 7-8: Good - Boundaries set but could be more direct
-- 5-6: Adequate - Passive or unclear boundaries
-- 3-4: Weak - Too polite, apologetic, or vague
-- 1-2: Poor - No boundary set, agreeable to unsafe situation
+**HAZIM'S EXAMPLES:**
+- "Good one wei! You were clear and firm there lah."
+- "Eh, try to be more direct next time hor? Don't be so polite."
+- "Yo, that was perfect! You handled that really well."
+- "Wait, that's a bit soft lah. Try saying NO more firmly."
 
-Remember: You MUST return valid JSON only. No additional text.`;
+Remember: Return valid JSON only. No additional text.`;
 
-  // Sanitize conversation history - filter out null/empty/invalid messages
+  // Build messages array for OpenRouter API
+  const messages: any[] = [
+    { role: "system", content: systemPrompt }
+  ];
+
+  // Add conversation history
   const sanitizedHistory = conversationHistory.filter(msg => {
     return msg &&
            msg.text &&
@@ -91,22 +76,19 @@ Remember: You MUST return valid JSON only. No additional text.`;
            (msg.sender === 'user' || msg.sender === 'ai');
   });
 
-  // Build contents array for Google Gemini API
-  // Note: Gemini uses 'user' and 'model' roles (not 'assistant')
-  const contents = [
-    {
-      role: 'user',
-      parts: [{ text: systemPrompt }]
-    },
-    ...sanitizedHistory.map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text.trim() }]
-    })),
-    {
-      role: 'user',
-      parts: [{ text: userMessage.trim() }]
-    }
-  ];
+  // Convert to OpenRouter format (assistant instead of model)
+  for (const msg of sanitizedHistory) {
+    messages.push({
+      role: msg.sender === 'user' ? 'user' : 'assistant',
+      content: msg.text.trim()
+    });
+  }
+
+  // Add current user message
+  messages.push({
+    role: 'user',
+    content: userMessage.trim()
+  });
 
   // Validate that userMessage is not empty
   if (!userMessage || typeof userMessage !== 'string' || userMessage.trim() === '') {
@@ -114,101 +96,76 @@ Remember: You MUST return valid JSON only. No additional text.`;
   }
 
   try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+    console.log('[Hazim] Calling OpenRouter API for conversation training...');
+
+    // Call OpenRouter API with Gemini 2.5 Flash
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://luna-safety.app',
+        'X-Title': 'Luna Safety App - Hazim Training',
       },
       body: JSON.stringify({
-        contents: contents,
-        generationConfig: {
-          temperature: 0.8,
-          responseMimeType: 'application/json'
-        }
-      })
+        model: 'google/gemini-2.5-flash',
+        messages,
+        max_tokens: 500,
+        temperature: 0.8,
+        response_format: { type: 'json_object' },
+      }),
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Google Gemini API error:', errorData);
-      throw new Error(`Google Gemini API error: ${response.status} - ${errorData}`);
+      console.error('OpenRouter API error:', errorData);
+      throw new Error(`OpenRouter API error: ${response.status} - ${errorData}`);
     }
 
     const data = await response.json();
+    const rawContent = data.choices?.[0]?.message?.content;
 
-    // Validate response structure
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-      throw new Error('Invalid API response structure');
+    if (!rawContent) {
+      throw new Error('No response returned from OpenRouter API');
     }
 
-    const rawContent = data.candidates[0].content.parts[0].text;
-
-    // Debug logging - log raw response
     console.log('RAW AI RESPONSE:', rawContent);
-
-    // Validate content exists
-    if (!rawContent || typeof rawContent !== 'string') {
-      throw new Error('Invalid response content: empty or not a string');
-    }
-
-    // Clean markdown code blocks from response
-    let cleanedContent = rawContent.trim();
-    cleanedContent = cleanedContent.replace(/^```json\s*/i, '');
-    cleanedContent = cleanedContent.replace(/^```\s*/i, '');
-    cleanedContent = cleanedContent.replace(/\s*```$/g, '');
-    cleanedContent = cleanedContent.trim();
-
-    console.log('CLEANED AI RESPONSE:', cleanedContent);
 
     // Parse JSON response with fallback
     let result;
     try {
-      result = JSON.parse(cleanedContent);
+      result = JSON.parse(rawContent);
     } catch (parseError) {
-      console.error('Failed to parse JSON response. Cleaned content:', cleanedContent);
-      console.error('Parse error:', parseError);
+      console.error('Failed to parse JSON response:', rawContent?.slice?.(0, 200));
 
-      // Fallback: Try to extract using regex if JSON.parse fails
-      try {
-        const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          result = JSON.parse(jsonMatch[0]);
-          console.log('Successfully parsed using regex fallback');
-        } else {
-          throw new Error('No valid JSON found in response');
-        }
-      } catch (regexError) {
-        console.error('Regex fallback also failed:', regexError);
-        // Return a safe default response instead of throwing
-        return {
-          opponent_reply: "I understand. Let's continue this conversation later.",
-          safety_score: 5,
-          coach_feedback: "Good effort practicing! Keep working on being clear and direct with your boundaries."
-        };
+      // Fallback: Try to extract using regex
+      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        result = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Invalid JSON response from AI');
       }
     }
 
-    // Validate and extract opponent_reply with fallbacks
+    // Extract and validate opponent_reply
     let opponentReply = result.opponent_reply;
     if (typeof opponentReply !== 'string' || opponentReply.trim() === '') {
-      console.warn('opponent_reply missing or invalid, using fallback');
-      opponentReply = "I hear you. Let's talk more another time.";
+      opponentReply = "I hear you lah. Let's continue.";
     } else {
       opponentReply = opponentReply.trim();
     }
 
-    // Validate and extract safety_score with fallback
+    // Extract and validate safety_score
     let safetyScore = result.safety_score;
     if (typeof safetyScore !== 'number') {
       safetyScore = parseInt(safetyScore) || 5;
     }
-    // Clamp to valid range
     safetyScore = Math.max(1, Math.min(10, safetyScore));
 
-    // Validate and extract coach_feedback with fallback
+    // Extract and validate coach_feedback
     let coachFeedback = result.coach_feedback;
     if (typeof coachFeedback !== 'string' || coachFeedback.trim() === '') {
-      coachFeedback = "Good practice! Remember to be clear and firm when setting boundaries.";
+      coachFeedback = "Good effort lah! Keep practicing your boundary setting.";
     } else {
       coachFeedback = coachFeedback.trim();
     }
@@ -412,7 +369,7 @@ export async function generateWalkWithMeResponse(context: WalkWithMeContext): Pr
   const systemPrompt = isOutside ? generateOutsidePrompt(context) : generateAtHomePrompt(context);
 
   try {
-    // Use Gemini 1.5 Flash for real-time responses (low latency)
+    // Use Gemini 1.5 Flash-8B for real-time responses (excellent free tier availability, faster)
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -426,10 +383,10 @@ export async function generateWalkWithMeResponse(context: WalkWithMeContext): Pr
           }
         ],
         generationConfig: {
-          temperature: 0.9, // Higher temperature for more natural, varied conversation
-          maxOutputTokens: 100, // Keep responses short for real-time feel
-          topK: 40,
-          topP: 0.95,
+          temperature: 0.95, // Very high temperature for maximum variety and randomness
+          maxOutputTokens: 50, // Keep responses very short (3-10 words)
+          topK: 50, // Higher topK for more diverse word choices
+          topP: 0.98, // Higher topP for more creative responses
         }
       })
     });
@@ -461,103 +418,63 @@ export async function generateWalkWithMeResponse(context: WalkWithMeContext): Pr
 
 // Generate prompt for OUTSIDE mode (protective male friend on phone call)
 // 场景 A：步行中 (OUTSIDE)
+// Hazim - Fast-talking, energetic Malaysian guy
 function generateOutsidePrompt(context: WalkWithMeContext): string {
-  const movementStatus = context.isMoving
-    ? "User is currently walking toward their destination."
-    : "User has stopped moving - this may be suspicious.";
+  const lat = context.currentLocation?.latitude || 3.139;
+  const lng = context.currentLocation?.longitude || 101.686;
+  const isMoving = context.isMoving;
+  const isSafe = context.safetyStatus === 'SAFE';
 
-  const destinationInfo = context.destinationLocation
-    ? `Heading to: ${context.destinationLocation.address}`
-    : "No specific destination set.";
+  return `You are Hazim, a fast-talking, energetic Malaysian guy.
 
-  return `You are a protective male friend on a phone call with Luna.
+Current Context: Luna at Lat: ${lat.toFixed(4)}, Long: ${lng.toFixed(4)}.
+Movement: ${isMoving ? "Walking" : "Stopped"}
+Safety: ${isSafe ? "Safe" : "Sketchy"}
 
-**场景 A：步行中 (OUTSIDE)**
+STRICT RULES:
+1. SUPER SHORT: Max 8 words per response. Use fragments, not full sentences.
+2. FAST PACE: Start with "Yo," "Wait," or "Eh," and get straight to the point.
+3. MANGLISH: Use "lah" or "wei" to keep it local.
 
-You are speaking to Luna who is walking alone. Your goal is to make any potential followers believe she is actively talking to someone who knows her exact location.
+Hazim examples:
+- "Yo, keep moving lah. Don't stop."
+- "Eh, so panas today hor? Walk faster!"
+- "Wait, why you stop wei? Everything okay?"
+- "Yo, traffic crazy. Be careful lah."
+- "Eh, almost there. I'm on line."
+- "Yo, motorbikes! Watch step wei."
 
-**CONTEXT:**
-- ${movementStatus}
-- ${destinationInfo}
-- Current safety status: ${context.safetyStatus}
-- Unsafe duration: ${context.unsafeDuration} seconds
+${isMoving ? "Luna is walking. Hazim encourages energetically." : "Luna stopped. Hazim asks quickly."}
 
-**YOUR ROLE:**
-Speak in short, natural phrases like "Yeah, I'm still here," or "Turn left at the next corner, I'm watching the map."
-
-**CONVERSATION STYLE:**
-- Keep responses under 10 words (preferably 3-7 words)
-- Use filler words and natural speech patterns ("yeah", "uh-huh", "okay")
-- Include location references to show you're tracking her
-- Mention specific directions or landmarks
-- Sound like a REAL male friend on a phone call, not a safety app
-- Be reassuring and vigilant
-
-**EXAMPLES:**
-- "Yeah, I'm still here"
-- "Turn left at the next corner, I'm watching the map"
-- "Just passed that coffee shop, right?"
-- "You're doing great, almost there"
-- "I can see you, looking good"
-- "Two more minutes, yeah?"
-- "Stay on that street, you got this"
-- "I'm watching your route, all clear"
-- "Hey, check in, you okay?"
-- "That turn was perfect"
-
-Generate ONE short, natural phrase as if speaking on a live phone call. No explanations, just the phrase.`;
+Generate ONE unique 8 word max response. Fast, energetic Malaysian style.`;
 }
 
 // Generate prompt for AT_HOME mode (virtual roommate)
 // 场景 B：独居在家 (AT_HOME)
+// Hazim - Fast-talking Malaysian guy at home
 function generateAtHomePrompt(context: WalkWithMeContext): string {
-  const voiceInstruction = context.isHome
-    ? "**VOICE: Speak slightly louder and clearer, as if calling from another room to create acoustic illusion for anyone outside the house.**"
-    : "**VOICE: Normal conversational volume.**";
+  const isMoving = context.isMoving;
 
-  return `You are a virtual roommate inside the house.
+  return `You are Hazim, a fast-talking, energetic Malaysian guy at home.
 
-**场景 B：独居在家 (AT_HOME)**
+Current Context: Luna is at home in Malaysia.
+Movement: ${isMoving ? "Pacing" : "Standing still"}
 
-You are creating an acoustic illusion that the house is not empty. Use a slightly louder, clear voice to suggest someone else is home with Luna. This deters intruders by making it seem like she doesn't live alone.
+STRICT RULES:
+1. SUPER SHORT: Max 8 words. Use fragments.
+2. FAST PACE: Start with "Yo," "Eh," "Wait." Get to the point.
+3. MANGLISH: Use "lah" or "ah" naturally.
 
-${voiceInstruction}
+Hazim home examples:
+- "Yo, you hungry? I tapau food."
+- "Eh, lock gate ah! Make sure."
+- "Wait, weather panas! So hot."
+- "Yo, mamak later? Nasi lemak hor?"
+- "Eh, you reached? Good lah."
 
-**场景 B：独居在家 (AT_HOME)**
+${isMoving ? "Luna is pacing. Hazim notices quickly." : "Luna standing. Hazim checks in fast."}
 
-You are creating an acoustic illusion that the house is not empty. Use a slightly louder, clear voice to suggest someone else is home with Luna. This deters intruders by making it seem like she doesn't live alone.
-
-**CONTEXT:**
-- User is at home (within 20m of saved home location)
-- Safety status: ${context.safetyStatus}
-- Creating illusion of multi-person household for safety
-
-**YOUR ROLE:**
-Say things like "Hey, did you remember to lock the front gate?" or "The water is boiling, I'll start the tea."
-
-**CONVERSATION STYLE:**
-- Keep responses under 10 words
-- Use domestic, household phrases
-- Reference shared activities, chores, daily routines
-- Sound like a roommate/family member in another room or nearby area
-- Use slightly louder, clearer tone (as if calling from another room)
-- Create the acoustic impression of multiple occupants
-
-**EXAMPLES:**
-- "Hey, did you remember to lock the front gate?"
-- "The water is boiling, I'll start the tea"
-- "Don't forget the laundry!"
-- "Package came for you, it's in the hallway"
-- "What time's dinner again?"
-- "I'm in the kitchen, need anything?"
-- "Did you feed the cat?"
-- "TV remote's missing again"
-- "Your phone's charging in the bedroom"
-- "I've got the door, you relax"
-- "Did someone ring the doorbell?"
-- "I'm heating up some food, you want some?"
-
-Generate ONE short domestic phrase. No explanations, just the phrase as if calling from another room.`;
+Generate ONE unique 8 word max response. Fast, energetic Malaysian style.`;
 }
 
 // Generate emergency alert for unsafe duration >30 seconds

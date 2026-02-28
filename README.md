@@ -1,3 +1,5 @@
+Here is the complete README file in Markdown format, with the new **Deepfake Protection Architecture** section integrated and the **Photo Privacy** feature updated.
+
 # 🌙 LUNA - Women's Safety App v2.0
 
 ## Table of Contents
@@ -8,6 +10,7 @@
 - [Technical Architecture](https://github.com/yantongggg/LUNA/blob/main/README.md#technical-architecture)
 - [System Architecture](#system-architecture)
 - [AI/ML Services Integration](#aiml-services-integration)
+- [Deepfake Protection Architecture](#deepfake-protection-architecture)
 - [Data Flow Diagrams](#data-flow-diagrams)
 - [Workflow & User Journey](#workflow--user-journey)
 - [Implementation Details](#implementation-details)
@@ -81,11 +84,12 @@ To empower women with tools for personal safety, evidence documentation, and eme
 - **AI-Powered Analysis**: Forensic analysis with risk scoring
 - **Chain of Custody**: Complete timestamped audit trail
 
-### 4. **Photo Privacy** 📸
-- **Deepfake detection** using Google Gemini Vision
-- **Invisible watermarking** for authenticity verification
-- **Image metadata analysis**
-- **Protection against unauthorized manipulation**
+### 4. **Photo Privacy & Defense** 📸
+- **AI Immunization**: Applies adversarial perturbation to "vaccinate" photos against generative AI manipulation.
+- **Deepfake Detection**: Uses Google Gemini Vision to detect existing manipulations and calculate AI likelihood scores.
+- **Steganographic Verification**: Embeds invisible signatures for authenticity checks.
+- **Zero-Visual Impact**: Protection layers modify high-frequency pixels without visible distortion.
+- **Integrity Verification**: SHA-256 hashing ensures file authenticity and chain of custody.
 
 ### 5. **Walk With Me** 🚶‍♀️
 - **Live location sharing** with Google Maps integration
@@ -127,7 +131,7 @@ To empower women with tools for personal safety, evidence documentation, and eme
 |---------|------|------------|
 | **Camouflage Interface** | ✅ Period tracker disguise | ❌ Obvious safety app |
 | **AI-Powered Evidence Analysis** | ✅ Google Gemini 1.5 Flash | ❌ Manual entry only |
-| **Deepfake Detection** | ✅ Gemini Vision | ❌ Not available |
+| **Deepfake Protection** | ✅ Adversarial Immunization | ❌ Not available |
 | **Malaysian Voice** | ✅ Azure en-MY-WilliamNeural | ❌ Generic voices |
 | **Hazim Coaching** | ✅ Localized persona | ❌ Generic AI |
 | **Legal PDF Reports** | ✅ Auto-generated | ❌ Not available |
@@ -498,6 +502,88 @@ const VOICE_NAME = 'en-MY-WilliamNeural';
 
 ---
 
+## Deepfake Protection Architecture
+
+LUNA employs a proactive defense mechanism against the rising threat of non-consensual deepfakes. Instead of merely detecting fakes, LUNA "immunizes" user photos to prevent AI manipulation before it happens.
+
+### Core Concept: Photo Immunization
+The system applies an **Adversarial Perturbation Layer** to uploaded images. This involves:
+1.  **High-Frequency Pixel Modification**: Subtle changes to pixel data that are invisible to humans but disruptive to neural networks.
+2.  **AI Disruption**: When a protected image is processed by generative models (e.g., Stable Diffusion, Midjourney), the perturbation causes the model to fail or produce incorrect outputs.
+3.  **Visual Integrity**: The modifications ensure no visible distortion, maintaining the original photo's aesthetic quality.
+
+### System Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   DEEPFAKE PROTECTION WORKFLOW                  │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+            ┌───────────────┴───────────────┐
+            ▼                               ▼
+┌───────────────────────┐       ┌───────────────────────┐
+│     PROTECT IMAGE     │       │    VERIFY IMAGE       │
+│     (Immunization)    │       │    (Validation)       │
+└───────────┬───────────┘       └───────────┬───────────┘
+            │                               │
+            ▼                               ▼
+┌───────────────────────┐       ┌───────────────────────┐
+│ 1. Image Preprocessing│       │ 1. Steganographic     │
+│    (Resize/Normalize) │       │    Signature Scan     │
+└───────────┬───────────┘       └───────────┬───────────┘
+            │                               │
+            ▼                               ▼
+┌───────────────────────┐       ┌───────────────────────┐
+│ 2. Adversarial        │       │ 2. Hash Comparison    │
+│    Perturbation Engine│       │    (SHA-256)          │
+└───────────┬───────────┘       └───────────┬───────────┘
+            │                               │
+            ▼                               ▼
+┌───────────────────────┐       ┌───────────────────────┐
+│ 3. Steganographic     │       │ 3. Device Key         │
+│    Signature Embed    │       │    Authentication     │
+└───────────┬───────────┘       └───────────┬───────────┘
+            │                               │
+            ▼                               ▼
+┌───────────────────────┐       ┌───────────────────────┐
+│ 4. SHA-256 Hash       │       │ 4. Display Result     │
+│    Generation         │       │    (Protected/Unpro.) │
+└───────────┬───────────┘       └───────────────────────┘
+            │
+            ▼
+┌───────────────────────┐
+│ 5. Output Protected   │
+│    Image              │
+└───────────────────────┘
+```
+
+### Technical Components
+
+| Component | Function | Technology |
+|-----------|----------|------------|
+| **Perturbation Engine** | Adds noise to disrupt AI feature extraction | Adversarial ML Algorithms |
+| **Steganography Module** | Embeds invisible verification signatures | LSB (Least Significant Bit) / DCT |
+| **Hash Generator** | Creates unique fingerprint for integrity | SHA-256 Cryptographic Hash |
+| **Verification Scanner** | Detects embedded signatures and validates keys | Custom Decoding Logic |
+
+### Security Maintenance & Robustness
+To ensure long-term effectiveness against evolving AI models:
+
+*   **Security Maintenance**:
+    *   **Encryption Library Updates**: Regular updates to cryptographic libraries to prevent signature forgery.
+    *   **Key Rotation Policies**: Periodic rotation of device keys used in the verification process to prevent spoofing.
+*   **AI Robustness**:
+    *   **Adaptive Perturbation**: Continuously updating perturbation methods to counteract new generative models (e.g., Midjourney v6, Stable Diffusion 3).
+    *   **Pipeline Testing**: Regular testing of editing pipelines to ensure the "immunization" remains effective against the latest AI editing tools.
+
+### User Interface
+The feature is accessible via the **Photo Privacy Care** module:
+- **Protect a Photo**: Initiates the immunization pipeline.
+- **Verify Protection**: Checks if an image is protected and authentic.
+- **Scan Report**: Displays AI detection scores (e.g., "AI Detection: 45%") and protection status ("Privacy Shield: Protected/Unprotected").
+
+---
+
 ## Data Flow Diagrams
 
 ### 1. Evidence Collection & Analysis Flow
@@ -845,7 +931,7 @@ const VOICE_NAME = 'en-MY-WilliamNeural';
 ### Prerequisites
 
 | Tool | Minimum Version | Purpose |
-|------|----------------|---------|
+|------|-----------------|---------|
 | **Node.js** | 18.0.0+ | JavaScript runtime |
 | **npm** | Latest | Package manager |
 | **Git** | Latest | Version control |
@@ -1421,8 +1507,31 @@ const PascalCase = Component;
 
 ---
 
+## Deepfake Protection
 
+### How Does it Protect Images?
 
+PhotoGuard works by applying adversarial perturbations to an image. In simple terms, it alters the pixel values of the image in microscopic ways that are completely invisible to the human eye, but highly disruptive to artificial intelligence.
+
+When an AI model tries to process the protected image to edit it, these invisible changes confuse the system, causing the attempted edit to fail or produce a garbled, unusable result.
+
+### PhotoGuard achieves this through two primary methods:
+
+1. The Encoder Attack
+Before an AI can edit an image, it must first "understand" it by compressing it into a mathematical format (a latent representation).
+
+The Defense: The Encoder Attack adds invisible noise that tricks the AI into thinking the image is something completely different.
+
+The Result: Because the AI fundamentally misunderstands what it is looking at, any text prompts used to edit the image will fail to apply correctly.
+
+2. The Diffusion Attack
+This is a more complex and robust defense that targets the actual image-generation phase (the diffusion process) of the AI model.
+
+The Defense: It mathematically optimizes the hidden noise to actively sabotage the AI's ability to generate new pixels based on the original image.
+
+The Result: If someone tries to alter a protected photo (e.g., trying to change the background or add a person), the AI will output a gray, pixelated, or entirely distorted mess instead of a realistic fake.
+
+---
 
 ## License
 
@@ -1457,10 +1566,9 @@ For issues, questions, or support:
 
 ---
 
-
-
 **Built with ❤️ using Google Gemini AI, Azure Neural TTS, and Supabase for Women's Safety**
 
 *"Your safety comes first. Take one step at a time."*
 
 *Last Updated: February 2026*
+```

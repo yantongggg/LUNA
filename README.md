@@ -20,6 +20,12 @@
 - [Future RoadMap](#future-roadmap)
 - [Contributing](#contributing)
 - [License](#license)
+- 
+## YouTube Demo Video:
+https://www.youtube.com/watch?v=ypPZL61ysrc
+
+## PPT:
+https://docs.google.com/presentation/d/1O6T61zQM2ffU-ku4k1Prbmp91K9yjNaf/edit?usp=sharing&ouid=100307772594735931276&rtpof=true&sd=true
 
 ---
 

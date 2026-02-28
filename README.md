@@ -22,6 +22,7 @@ Here is the complete README file in Markdown format, with the new **Deepfake Pro
 - [Troubleshooting](#troubleshooting)
 - [Future RoadMap](#future-roadmap)
 - [Contributing](#contributing)
+- [Deep fake protection](#Deepfake-Protection)
 - [License](#license)
  
 ## YouTube Demo Video:

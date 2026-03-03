@@ -1,5 +1,3 @@
-Here is the complete README file in Markdown format, with the new **Deepfake Protection Architecture** section integrated and the **Photo Privacy** feature updated.
-
 # 🌙 LUNA - Women's Safety App v2.0
 
 ## Table of Contents
